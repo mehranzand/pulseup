@@ -1,1 +1,1 @@
-﻿pulseup is a smart assistant for Docker logs
+﻿pulseup is a smart assistant for Docker continers logs
