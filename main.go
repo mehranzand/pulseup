@@ -3,15 +3,14 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("welcome"))
+	e := echo.New()
+	e.GET("/api", func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello world!")
 	})
-	http.ListenAndServe(":4000", r)
+
+	e.Logger.Fatal(e.Start(":7000"))
 }
