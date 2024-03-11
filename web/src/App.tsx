@@ -18,9 +18,9 @@ function App() {
 
   return (
     <>
-    FDHFDHFGHFGG
-      {data}
-      <h1>Hello Air!!!!!!!!!!!</h1>  
+      <h1>{data}</h1>
+      <h2>Seamless log monitoring for Docker containers with intelligent </h2>  
+      <h2> action logs for next-level performance and insight.</h2>  
     </>
   )
 }
