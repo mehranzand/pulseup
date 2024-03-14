@@ -1,13 +1,14 @@
 package main
 
 import (
-	"net/http"
 	"strings"
+
+	"github.com/labstack/echo/v4"
+	"github.com/mehranzand/pulseup/internal/docker"
+	"github.com/mehranzand/pulseup/internal/web"
 
 	"github.com/alexflint/go-arg"
 	"github.com/joho/godotenv"
-	"github.com/labstack/echo/v4"
-	"github.com/mehranzand/pulseup/web"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,13 +44,60 @@ func main() {
 
 	log.Infof("pulseUp version %s", version)
 
-	e := echo.New()
-	web.RegisterHandlers(e)
-	e.GET("/api", func(c echo.Context) error {
-		return c.String(http.StatusOK, "pulseUp")
-	})
+	clients := createClient(args, docker.NewClientWithOpts, args.Hostname)
 
-	e.Logger.Fatal(e.Start(args.Addr))
+	if len(clients) == 0 {
+		log.Fatal("Could not connect to any Docker Engines")
+	} else {
+		log.Infof("Connected to %d Docker Engine(s)", len(clients))
+	}
+
+	createServer(args, clients)
+
+}
+
+func createClient(
+	args args,
+	localClientFactory func(map[string][]string) (docker.Client, error),
+	hostname string) map[string]docker.Client {
+	clients := make(map[string]docker.Client)
+
+	if localClient, err := createLocalClient(args, localClientFactory); err == nil {
+		if hostname != "" {
+			localClient.Host().Name = hostname
+		}
+		clients[localClient.Host().ID] = localClient
+	}
+
+	return clients
+}
+
+func createLocalClient(args args, localClientFactory func(map[string][]string) (docker.Client, error)) (docker.Client, error) {
+	for i := 1; ; i++ {
+		dockerClient, err := localClientFactory(args.Filter)
+		if err == nil {
+			_, err := dockerClient.ListContainers()
+			if err != nil {
+				log.Debugf("Could not connect to local Docker Engine: %s", err)
+			} else {
+				log.Debugf("Connected to local Docker Engine")
+				return dockerClient, nil
+			}
+		}
+	}
+}
+
+func createServer(args args, clients map[string]docker.Client) *echo.Echo {
+
+	config := web.Config{
+		Addr:         args.Addr,
+		Base:         args.Base,
+		Version:      version,
+		Hostname:     args.Hostname,
+		AuthProvider: web.NONE,
+	}
+
+	return web.CreateServer(clients["localhost"], config)
 }
 
 func parseArgs() args {
