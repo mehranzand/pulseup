@@ -1,4 +1,4 @@
-package ui
+package web
 
 import (
 	"embed"
@@ -7,7 +7,9 @@ import (
 )
 
 var (
-	dist          embed.FS
+	//go:embed all:dist
+	dist embed.FS
+	//go:embed dist/index.html
 	indexHTML     embed.FS
 	distDirFS     = echo.MustSubFS(dist, "dist")
 	distIndexHtml = echo.MustSubFS(indexHTML, "dist")

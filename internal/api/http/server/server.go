@@ -1,4 +1,4 @@
-package web
+package server
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/mehranzand/pulseup/ui"
+	"github.com/mehranzand/pulseup/web"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,14 +30,14 @@ func CreateServer(client docker.Client, config Config) *echo.Echo {
 	list, _ := client.ListContainers()
 
 	for container := range list {
-
 		c := list[container]
 		log.Info(c.Name)
 	}
 
 	server := echo.New()
 
-	ui.RegisterHandlers(server)
+	web.RegisterHandlers(server)
+
 	server.GET("/api", func(c echo.Context) error {
 		return c.String(http.StatusOK, "pulseUp")
 	})

@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/mehranzand/pulseup/internal/api/http/server"
 	"github.com/mehranzand/pulseup/internal/docker"
-	"github.com/mehranzand/pulseup/internal/web"
 
 	"github.com/alexflint/go-arg"
 	"github.com/joho/godotenv"
@@ -17,14 +19,15 @@ var (
 )
 
 type args struct {
-	Addr          string              `arg:"env:PULSEUP_ADDR" default:":7070" help:"sets host:port to bind for server. This is rarely needed inside a docker container."`
-	Base          string              `arg:"env:PULSEUP_BASE" default:"/" help:"sets the base for http router."`
-	Hostname      string              `arg:"env:PULSEUP_HOSTNAME" help:"sets the hostname for display. This is useful with multiple pulseUp instances."`
-	Level         string              `arg:"env:PULSEUP_LEVEL" default:"info" help:"set pulseUp log level. Use debug for more logging."`
-	Username      string              `arg:"env:PULSEUP_USERNAME" help:"sets the username for auth."`
-	Password      string              `arg:"env:PULSEUP_PASSWORD" help:"sets password for auth"`
-	FilterStrings []string            `arg:"env:PULSEUP_FILTER,--filter,separate" help:"filters docker containers using Docker syntax."`
-	Filter        map[string][]string `arg:"-"`
+	Addr                 string              `arg:"env:PULSEUP_ADDR" default:":7070" help:"sets host:port to bind for server. This is rarely needed inside a docker container."`
+	Base                 string              `arg:"env:PULSEUP_BASE" default:"/" help:"sets the base for http router."`
+	Hostname             string              `arg:"env:PULSEUP_HOSTNAME" help:"sets the hostname for display. This is useful with multiple pulseUp instances."`
+	LogLevel             string              `arg:"env:PULSEUP_LOGLEVEL" default:"info" help:"set pulseUp log level. Use debug for more logging."`
+	Username             string              `arg:"env:PULSEUP_USERNAME" help:"sets the username for auth."`
+	Password             string              `arg:"env:PULSEUP_PASSWORD" help:"sets password for auth"`
+	FilterStrings        []string            `arg:"env:PULSEUP_FILTER,--filter,separate" help:"filters docker containers using Docker syntax."`
+	Filter               map[string][]string `arg:"-"`
+	WaitForDockerSeconds int                 `arg:"--wait-for-docker-seconds,env:PULEUP_WAIT_FOR_DOCKER_SECONDS" help:"wait for docker to be available for at most this many seconds before starting the server."`
 }
 
 func (args) Version() string {
@@ -53,7 +56,6 @@ func main() {
 	}
 
 	createServer(args, clients)
-
 }
 
 func createClient(
@@ -84,27 +86,36 @@ func createLocalClient(args args, localClientFactory func(map[string][]string) (
 				return dockerClient, nil
 			}
 		}
+		if args.WaitForDockerSeconds > 0 {
+			log.Infof("Waiting for Docker Engine (attempt %d): %s", i, err)
+			time.Sleep(5 * time.Second)
+			args.WaitForDockerSeconds -= 5
+		} else {
+			log.Debugf("Local Docker Engine not found")
+			break
+		}
 	}
+	return nil, errors.New("could not connect to local Docker Engine")
 }
 
 func createServer(args args, clients map[string]docker.Client) *echo.Echo {
 
-	config := web.Config{
+	config := server.Config{
 		Addr:         args.Addr,
 		Base:         args.Base,
 		Version:      version,
 		Hostname:     args.Hostname,
-		AuthProvider: web.NONE,
+		AuthProvider: server.NONE,
 	}
 
-	return web.CreateServer(clients["localhost"], config)
+	return server.CreateServer(clients["localhost"], config)
 }
 
 func parseArgs() args {
 	var args args
 	parser := arg.MustParse(&args)
 
-	configureLogger(args.Level)
+	configureLogger(args.LogLevel)
 
 	args.Filter = make(map[string][]string)
 
