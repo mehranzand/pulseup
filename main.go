@@ -1,12 +1,11 @@
 package main
 
 import (
-	"errors"
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/mehranzand/pulseup/internal/api/http/server"
+	"github.com/mehranzand/pulseup/api"
+	"github.com/mehranzand/pulseup/api/handler"
 	"github.com/mehranzand/pulseup/internal/docker"
 
 	"github.com/alexflint/go-arg"
@@ -43,72 +42,68 @@ func main() {
 	args := parseArgs()
 	if len(args.Addr) == 0 {
 		log.Fatal("PULSEUP_ADDR can't be null or empty")
+
 	}
 
 	log.Infof("pulseUp version %s", version)
 
-	clients := createClient(args, docker.NewClientWithOpts, args.Hostname)
+	clients := createClient(args.Hostname, args, docker.NewClientWithOpts)
 
 	if len(clients) == 0 {
-		log.Fatal("Could not connect to any Docker Engines")
+		log.Fatal("Could not connect to any Dockerd")
 	} else {
-		log.Infof("Connected to %d Docker Engine(s)", len(clients))
+		log.Infof("Connected to %d Dockerd(s)", len(clients))
 	}
 
 	createServer(args, clients)
 }
 
-func createClient(
-	args args,
-	localClientFactory func(map[string][]string) (docker.Client, error),
-	hostname string) map[string]docker.Client {
+func createClient(hostname string, args args, clientFactory func(map[string][]string) (docker.Client, error)) map[string]docker.Client {
 	clients := make(map[string]docker.Client)
 
-	if localClient, err := createLocalClient(args, localClientFactory); err == nil {
-		if hostname != "" {
-			localClient.Host().Name = hostname
+	for i := 1; ; i++ {
+		dockerClient, err := clientFactory(args.Filter)
+
+		if err == nil {
+			if hostname != "" {
+				dockerClient.Host().Name = hostname
+			}
+
+			_, err := dockerClient.ListContainers()
+
+			if err != nil {
+				log.Debugf("Could not connect to local Dockerd: %s", err)
+			} else {
+				log.Debugf("Connected to local Dockerd")
+
+				clients[dockerClient.Host().ID] = dockerClient
+			}
 		}
-		clients[localClient.Host().ID] = localClient
+
+		if args.WaitForDockerSeconds > 0 {
+			log.Infof("Waiting for Dockerd (attempt %d): %s", i, err)
+			time.Sleep(5 * time.Second)
+			args.WaitForDockerSeconds -= 5
+		} else {
+			log.Debugf("Local Dockerd not found")
+			break
+		}
 	}
 
 	return clients
 }
 
-func createLocalClient(args args, localClientFactory func(map[string][]string) (docker.Client, error)) (docker.Client, error) {
-	for i := 1; ; i++ {
-		dockerClient, err := localClientFactory(args.Filter)
-		if err == nil {
-			_, err := dockerClient.ListContainers()
-			if err != nil {
-				log.Debugf("Could not connect to local Docker Engine: %s", err)
-			} else {
-				log.Debugf("Connected to local Docker Engine")
-				return dockerClient, nil
-			}
-		}
-		if args.WaitForDockerSeconds > 0 {
-			log.Infof("Waiting for Docker Engine (attempt %d): %s", i, err)
-			time.Sleep(5 * time.Second)
-			args.WaitForDockerSeconds -= 5
-		} else {
-			log.Debugf("Local Docker Engine not found")
-			break
-		}
-	}
-	return nil, errors.New("could not connect to local Docker Engine")
-}
+func createServer(args args, clients map[string]docker.Client) {
 
-func createServer(args args, clients map[string]docker.Client) *echo.Echo {
-
-	config := server.Config{
+	config := handler.Config{
 		Addr:         args.Addr,
 		Base:         args.Base,
 		Version:      version,
 		Hostname:     args.Hostname,
-		AuthProvider: server.NONE,
+		AuthProvider: handler.NONE,
 	}
 
-	return server.CreateServer(clients["localhost"], config)
+	api.CreateServer(clients, &config)
 }
 
 func parseArgs() args {
@@ -141,6 +136,6 @@ func configureLogger(level string) {
 
 	log.SetFormatter(&log.TextFormatter{
 		DisableColors: false,
-		FullTimestamp: true,
+		FullTimestamp: false,
 	})
 }
