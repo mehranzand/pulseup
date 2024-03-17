@@ -11,13 +11,12 @@ import (
 func CreateServer(clients map[string]docker.Client, config *handler.Config) {
 	h := handler.NewHandler(config)
 	r := router.New()
-
 	//Inject docker client to request context
 	r.Use(middleware.DockerMiddleware(r, clients))
-	//Default route group
-	v1 := r.Group("/api")
+	//Rebase by config args
+	base := r.Group(config.Base + "/api")
 	// Register routes and handlers
-	h.Register(v1)
+	h.Register(base)
 	//handle embeded react
 	web.RegisterHandlers(r)
 	// run web server
