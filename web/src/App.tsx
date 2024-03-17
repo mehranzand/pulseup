@@ -8,7 +8,7 @@ function App() {
 
   useEffect(() =>{
     const fetchData = async () => {
-      const res = await fetch("http://localhost:7070/base/api/localhost/containers")
+      const res = await fetch("http://localhost:7070/api/localhost/containers")
       const data = await res.text()
 
       setData(data)
@@ -17,24 +17,36 @@ function App() {
     fetchData().catch((err) => console.log(err))
   }, [])
 
-  useEffect(() =>{
-    const fetchData = async () => {
-      const res = await fetch("http://localhost:7070/base/api/logs/:host/:id")
-      const data = await res.text()
-
-      setData1(data)
+  useEffect(() => {
+    const sse = new EventSource('http://localhost:7070/api/logs/stream/:host/:id',
+      { withCredentials: true });
+    function getRealtimeData(data1 : any) {
+      // process the data here,
+      // then pass it to state to be rendered
+      setData1(data1)
     }
+    sse.onmessage = e => getRealtimeData(JSON.parse(e.data));
+    sse.onerror = () => {
+      // error log here 
+      
+      sse.close();
+    }
+    return () => {
+      sse.close();
+    };
+  });
 
-    fetchData().catch((err) => console.log(err))
-  }, [])
 
   return (
-    <>
-      <h1>{data}</h1>
-      <h1>{data1}</h1>
-      <h2>Seamless log monitoring for Docker containers with intelligent </h2>  
-      <h2> action logs for next-level performance and insight.</h2>  
-    </>
+    <div style={{height: "100vh"}}>
+      <h1 style={{color: 'green'}}>pulseUp</h1>
+      <h2 style={{color: 'GrayText'}}>Seamless log monitoring for Docker containers with intelligent</h2>  
+      <h2 style={{color: 'GrayText', marginTop: -15}}>action logs for next-level performance and insight.</h2> 
+      <br /><br /><br />
+      <span style={{color: 'yellow'}}>{data}</span>
+      <br /><br /><br />
+      <h3>{data1}</h3>
+    </div>
   )
 }
 

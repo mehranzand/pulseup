@@ -6,5 +6,5 @@ import (
 
 func (h *Handler) Register(v1 *echo.Group) {
 	v1.GET("/:host/containers", h.GetContainers)
-	v1.GET("/logs/:host/:id", h.GetContainers)
+	v1.GET("/logs/stream/:host/:id", h.StreamLogs)
 }
