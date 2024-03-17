@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -37,13 +38,14 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 	stdTypes |= docker.STDOUT
 
 	cc := c.(*middleware.DockerContext)
+	id := c.Param("id")
 
 	_, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
 		http.Error(c.Response().Writer, "Streaming unsupported!", http.StatusInternalServerError)
 	}
 
-	_, err := cc.Client.ContainerLogs(c.Request().Context(), "329c358a5e81", "", stdTypes)
+	reader, err := cc.Client.ContainerLogs(c.Request().Context(), id, "", stdTypes)
 	if err != nil {
 		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
 	}
@@ -53,6 +55,17 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 	c.Response().Header().Add("Cache-Control", "no-cache")
 	c.Response().Header().Set("Connection", "keep-alive")
 	c.Response().Header().Set("X-Accel-Buffering", "no")
+
+	defer reader.Close()
+
+	buf := make([]byte, 1000)
+	for {
+		n, err := reader.Read(buf)
+		fmt.Println(n, err, string(buf[:n]))
+		if err == io.EOF {
+			break
+		}
+	}
 
 	return nil
 }

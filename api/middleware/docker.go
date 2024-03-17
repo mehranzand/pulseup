@@ -21,7 +21,7 @@ func DockerMiddleware(e *echo.Echo, clients map[string]docker.Client) echo.Middl
 			if client, ok := clients[c.Param("host")]; ok {
 				cc.Client = client
 			} else {
-				log.Debug("Middleware could not be infer the Docker client from the URL")
+				log.Debugf("Middleware could not be infer the Docker client from the URL host:%s", c.Param("host"))
 			}
 
 			return next(cc)
