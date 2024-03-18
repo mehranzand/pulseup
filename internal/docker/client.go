@@ -176,8 +176,8 @@ func (d *_client) ContainerLogs(ctx context.Context, id string, since string, st
 	log.WithField("id", id).WithField("since", since).WithField("stdType", stdType).Debug("streaming logs for container")
 
 	if since != "" {
-		if millis, err := strconv.ParseInt(since, 10, 64); err == nil {
-			since = time.UnixMicro(millis).Add(time.Millisecond).Format(time.RFC3339Nano)
+		if m, err := strconv.ParseInt(since, 10, 64); err == nil {
+			since = time.Unix(m, 0).Format(time.RFC3339Nano)
 		} else {
 			log.WithError(err).Debug("unable to parse since")
 		}

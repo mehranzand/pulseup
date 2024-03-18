@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/mehranzand/pulseup/api/middleware"
@@ -16,9 +18,17 @@ import (
 func (h *Handler) GetContainers(c echo.Context) error {
 	cc := c.(*middleware.DockerContext)
 
+	if cc.Client == nil {
+		http.Error(c.Response().Writer, "Docker host not found!", http.StatusInternalServerError)
+
+		return nil
+	}
+
 	containers, err := cc.Client.ListContainers()
 	if err != nil {
 		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
+
+		return nil
 	}
 
 	enc := json.NewEncoder(c.Response())
@@ -45,7 +55,9 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 		http.Error(c.Response().Writer, "Streaming unsupported!", http.StatusInternalServerError)
 	}
 
-	reader, err := cc.Client.ContainerLogs(c.Request().Context(), id, "", stdTypes)
+	since := time.Now().AddDate(0, 0, -2)
+
+	reader, err := cc.Client.ContainerLogs(c.Request().Context(), id, strconv.FormatInt(since.Unix(), 10), stdTypes)
 	if err != nil {
 		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
 	}
@@ -58,13 +70,17 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 
 	defer reader.Close()
 
-	buf := make([]byte, 1000)
+	data := make([]byte, 10000)
 	for {
-		n, err := reader.Read(buf)
-		fmt.Println(n, err, string(buf[:n]))
-		if err == io.EOF {
+		bufReader := bufio.NewReader(reader)
+		_, err = bufReader.Read(data)
+
+		if err != nil {
+			fmt.Println(err)
 			break
 		}
+
+		fmt.Println(string(data))
 	}
 
 	return nil
