@@ -2,15 +2,20 @@ package handler
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/mehranzand/pulseup/api/middleware"
 	"github.com/mehranzand/pulseup/internal/docker"
+	log "github.com/sirupsen/logrus"
 )
 
 // GetContainers
@@ -20,15 +25,11 @@ func (h *Handler) GetContainers(c echo.Context) error {
 
 	if cc.Client == nil {
 		http.Error(c.Response().Writer, "Docker host not found!", http.StatusInternalServerError)
-
-		return nil
 	}
 
 	containers, err := cc.Client.ListContainers()
 	if err != nil {
 		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
-
-		return nil
 	}
 
 	enc := json.NewEncoder(c.Response())
@@ -50,38 +51,106 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 	cc := c.(*middleware.DockerContext)
 	id := c.Param("id")
 
-	_, ok := c.Response().Writer.(http.Flusher)
+	_, ok := cc.Context.Response().Writer.(http.Flusher)
 	if !ok {
 		http.Error(c.Response().Writer, "Streaming unsupported!", http.StatusInternalServerError)
 	}
 
-	since := time.Now().AddDate(0, 0, -2)
-
-	reader, err := cc.Client.ContainerLogs(c.Request().Context(), id, strconv.FormatInt(since.Unix(), 10), stdTypes)
+	container, err := cc.Client.FindContainer(id)
 	if err != nil {
 		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
 	}
 
-	c.Response().Header().Set("Content-Type", "text/event-stream")
-	c.Response().Header().Set("Cache-Control", "no-transform")
-	c.Response().Header().Add("Cache-Control", "no-cache")
+	since := time.Now().AddDate(0, 0, 0)
+	reader, err := cc.Client.ContainerLogs(cc.Context.Request().Context(), container.ID, strconv.FormatInt(since.Unix(), 10), stdTypes)
+	if err != nil {
+		http.Error(cc.Context.Response().Writer, "Continer not found!", http.StatusInternalServerError)
+	}
+
+	msg, _ := readLog(reader, container.Tty)
+
+	log.Infof("%q\n", msg)
+
+	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
+	c.Response().Header().Set(echo.HeaderCacheControl, "no-transform")
+	c.Response().Header().Add(echo.HeaderCacheControl, "no-cache")
 	c.Response().Header().Set("Connection", "keep-alive")
 	c.Response().Header().Set("X-Accel-Buffering", "no")
 
-	defer reader.Close()
+	// f, err := os.Open("log")
+	// if err != nil {
+	// 	log.Fatalf("unable to read file: %v", err)
+	// }
+	// defer f.Close()
+	// buf := make([]byte, 1024)
+	// for {
+	// 	n, err := f.Read(buf)
+	// 	if err == io.EOF {
+	// 		break
+	// 	}
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		continue
+	// 	}
 
-	data := make([]byte, 10000)
-	for {
-		bufReader := bufio.NewReader(reader)
-		_, err = bufReader.Read(data)
+	// 	if n > 0 {
+	// 		fmt.Println(string(buf[:n]))
+	// 	}
 
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-
-		fmt.Println(string(data))
-	}
+	// }
 
 	return nil
+}
+
+var bufferPool = &sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(nil)
+	},
+}
+
+func readLog(r io.Reader, tty bool) (string, error) {
+	header := []byte{0, 0, 0, 0, 0, 0, 0, 0}
+	reader := bufio.NewReader(r)
+	buffer := bufferPool.Get().(*bytes.Buffer)
+	buffer.Reset()
+
+	if tty {
+		message, err := reader.ReadString('\n')
+		if err != nil {
+			return message, err
+		}
+		return message, nil
+	} else {
+		n, err := io.ReadFull(reader, header)
+		if err != nil {
+			return "", err
+		}
+		if n != 8 {
+			log.Warnf("unable to read header: %v", header)
+			message, _ := reader.ReadString('\n')
+			return message, nil
+		}
+
+		fmt.Println(header[0])
+
+		switch header[0] {
+		case 1:
+
+		case 2:
+
+		default:
+			log.Warnf("unknown stream type: %v", header[0])
+		}
+
+		count := binary.BigEndian.Uint32(header[4:])
+		if count == 0 {
+			return "", nil
+		}
+		_, err = io.CopyN(buffer, reader, int64(count))
+		if err != nil {
+			return "", err
+		}
+		return buffer.String(), nil
+	}
+
 }

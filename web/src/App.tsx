@@ -18,7 +18,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const sse = new EventSource('http://localhost:7070/api/logs/stream/localhost/17cd',
+    const sse = new EventSource('http://localhost:7070/api/logs/stream/localhost/5ab',
       { withCredentials: true });
     function getRealtimeData(data1 : any) {
       // process the data here,
