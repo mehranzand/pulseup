@@ -18,34 +18,46 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const sse = new EventSource('http://localhost:7070/api/logs/stream/localhost/5ab',
-      { withCredentials: true });
-    function getRealtimeData(data1 : any) {
-      // process the data here,
-      // then pass it to state to be rendered
-      setData1(data1)
+
+    const url = "http://localhost:7070/api/logs/stream/localhost/89e69b17c2ee"
+
+    if ('EventSource' in window) {
+      let source = new EventSource(url, {withCredentials: false})
+
+      var evtSourceErrorHandler = function(event : any){
+        var txt;
+        switch( event.target.readyState ){
+            case EventSource.CONNECTING:
+                txt = 'Reconnecting...';
+                break;
+            case EventSource.CLOSED:
+                txt = 'Reinitializing...';
+                source = new EventSource("../sse.php");
+                source.onerror = evtSourceErrorHandler;
+                break;
+        }
+        console.log(txt);
     }
-    sse.onmessage = e => getRealtimeData(JSON.parse(e.data));
-    sse.onerror = () => {
-      // error log here 
+
+    source.addEventListener('message', function(e) {     
       
-      sse.close();
-    }
-    return () => {
-      sse.close();
-    };
+      setData1((prev) => e.data + '\n' + prev)
+    }, false);
+  }
+    
+  
   }, []);
 
 
   return (
-    <div style={{height: "100vh"}}>
+    <div style={{height: "100vh", width: "100vw", textAlign: "left"}}>
       <h1 style={{color: 'green'}}>pulseUp</h1>
       <h2 style={{color: 'GrayText'}}>Seamless log monitoring for Docker containers with intelligent</h2>  
       <h2 style={{color: 'GrayText', marginTop: -15}}>action logs for next-level performance and insight.</h2> 
       <br /><br /><br />
       <span style={{color: 'yellow'}}>{data}</span>
       <br /><br /><br />
-      <h3>{data1}</h3>
+      <h3><span style={{whiteSpace: "pre-line", textAlign: "left"}}>{data1}</span></h3>
     </div>
   )
 }
