@@ -5,7 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -23,8 +25,10 @@ const (
 )
 
 type Log struct {
-	Message   any   `json:"m,omitempty"`
-	Timestamp int64 `json:"ts"`
+	Timestamp  int64    `json:"ts"`
+	Message    any      `json:"m,omitempty"`
+	Data       string   `json:"data,omitempty"`
+	ActionTags []string `json:"action_tags,omitempty"`
 }
 
 type LogReader struct {
@@ -44,7 +48,7 @@ func NewLogReader(reader io.Reader, tty bool) *LogReader {
 	logReader.wg.Add(2)
 
 	go logReader.readerProcess(tty)
-	go logReader.bufferProcess()
+	go logReader.bufferEmitter()
 
 	return logReader
 }
@@ -53,13 +57,13 @@ func (e *LogReader) readerProcess(tty bool) {
 	_, err := e.readLog(e.reader, tty)
 
 	if err != nil {
-		fmt.Print(err)
+		logrus.Debug(err)
 	}
 
 	e.wg.Done()
 }
 
-func (e *LogReader) bufferProcess() {
+func (e *LogReader) bufferEmitter() {
 	for {
 		event, ok := <-e.buffer
 		if !ok {
@@ -73,7 +77,7 @@ func (e *LogReader) bufferProcess() {
 	e.wg.Done()
 }
 
-func (e *LogReader) readLog(src io.Reader, tty bool) (written int64, err error) {
+func (e *LogReader) readLog(src *bufio.Reader, tty bool) (written int64, err error) {
 	var (
 		buf       = make([]byte, startingBufLen)
 		bufLen    = len(buf)
@@ -83,71 +87,96 @@ func (e *LogReader) readLog(src io.Reader, tty bool) (written int64, err error) 
 	)
 
 	for {
-		// Make sure we have at least a full header
-		for nr < writerPrefixLen {
-			var nr2 int
-			nr2, er = src.Read(buf[nr:])
-			nr += nr2
-			if er == io.EOF {
-				if nr < writerPrefixLen {
-					logrus.Debugf("Corrupted prefix: %v", buf[:nr])
-					return written, nil
+		if tty {
+			message, err := src.ReadString('\n')
+			if err != nil {
+				close(e.buffer)
+				logrus.Error(err)
+
+				return 0, err
+			}
+
+			e.parseAndPushEvent(message)
+
+		} else {
+			for nr < writerPrefixLen {
+				var nr2 int
+				nr2, er = src.Read(buf[nr:])
+				nr += nr2
+				if er == io.EOF {
+					if nr < writerPrefixLen {
+						logrus.Debugf("Corrupted prefix: %v", buf[:nr])
+						return written, er
+					}
+					break
 				}
-				break
-			}
-			if er != nil {
-				logrus.Debugf("Error reading header: %s", er)
-				return 0, er
-			}
-		}
-
-		// Check the first byte to know where to write
-		switch StdType(buf[writerFlagIndex]) {
-		case Stdin:
-			fallthrough
-		case Stdout:
-			// Write on stdout
-			//out = dstout
-		case Stderr:
-			// Write on stderr
-			//out = dsterr
-		default:
-			logrus.Debugf("Error selecting output flag index: (%d)", buf[writerFlagIndex])
-			return 0, fmt.Errorf("Unrecognized input header: %d", buf[writerFlagIndex])
-		}
-
-		frameSize = int(binary.BigEndian.Uint32(buf[writerSizeIndex : writerSizeIndex+4]))
-		logrus.Debugf("framesize: %d", frameSize)
-
-		if frameSize+writerPrefixLen > bufLen {
-			logrus.Debugf("Extending buffer cap by %d (was %d)", frameSize+writerPrefixLen-bufLen+1, len(buf))
-			buf = append(buf, make([]byte, frameSize+writerPrefixLen-bufLen+1)...)
-			bufLen = len(buf)
-		}
-
-		for nr < frameSize+writerPrefixLen {
-			var nr2 int
-			nr2, er = src.Read(buf[nr:])
-			nr += nr2
-			if er == io.EOF {
-				if nr < frameSize+writerPrefixLen {
-					logrus.Debugf("Corrupted frame: %v", buf[writerPrefixLen:nr])
-					return written, nil
+				if er != nil {
+					logrus.Debugf("Error reading header: %s", er)
+					return 0, er
 				}
-				break
 			}
-			if er != nil {
-				logrus.Debugf("Error reading frame: %s", er)
-				return 0, er
+
+			switch StdType(buf[writerFlagIndex]) {
+			case Stdin:
+				fallthrough
+			case Stdout:
+				// Write on stdout
+				//out = dstout
+			case Stderr:
+				// Write on stderr
+				//out = dsterr
+			default:
+				logrus.Debugf("Error selecting output flag index: (%d)", buf[writerFlagIndex])
+				return 0, fmt.Errorf("Unrecognized input header: %d", buf[writerFlagIndex])
 			}
+
+			frameSize = int(binary.BigEndian.Uint32(buf[writerSizeIndex : writerSizeIndex+4]))
+			logrus.Debugf("framesize: %d", frameSize)
+
+			if frameSize+writerPrefixLen > bufLen {
+				logrus.Debugf("Extending buffer cap by %d (was %d)", frameSize+writerPrefixLen-bufLen+1, len(buf))
+				buf = append(buf, make([]byte, frameSize+writerPrefixLen-bufLen+1)...)
+				bufLen = len(buf)
+			}
+
+			for nr < frameSize+writerPrefixLen {
+				var nr2 int
+				nr2, er = src.Read(buf[nr:])
+				nr += nr2
+				if er == io.EOF {
+					if nr < frameSize+writerPrefixLen {
+						logrus.Debugf("Corrupted frame: %v", buf[writerPrefixLen:nr])
+						return written, nil
+					}
+					break
+				}
+				if er != nil {
+					logrus.Debugf("Error reading frame: %s", er)
+					return 0, er
+				}
+			}
+
+			e.parseAndPushEvent(string(buf[writerPrefixLen : frameSize+writerPrefixLen]))
+
+			logrus.Debugf("Channel buffer size: %d", len(e.buffer))
+
+			copy(buf, buf[frameSize+writerPrefixLen:])
+			nr -= frameSize + writerPrefixLen
 		}
-
-		logEvent := LogEvent{Message: string(buf[writerPrefixLen : frameSize+writerPrefixLen])}
-		e.buffer <- &logEvent
-
-		logrus.Debugf("Channel buffer size: %d", len(e.buffer))
-
-		copy(buf, buf[frameSize+writerPrefixLen:])
-		nr -= frameSize + writerPrefixLen
 	}
+}
+
+func (e *LogReader) parseAndPushEvent(message string) {
+	logEvent := &LogEvent{Message: message}
+
+	if index := strings.IndexAny(message, " "); index != -1 {
+		stamp := message[:index]
+		logEvent.Message = strings.TrimSuffix(message[index+1:], "")
+
+		if timestamp, err := time.Parse(time.RFC3339Nano, stamp); err == nil {
+			logEvent.Timestamp = timestamp.UnixMilli()
+		}
+	}
+
+	e.buffer <- logEvent
 }

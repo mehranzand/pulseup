@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mehranzand/pulseup/api/middleware"
 	"github.com/mehranzand/pulseup/internal/docker"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // GetContainers
@@ -26,15 +26,22 @@ func (h *Handler) GetContainers(c echo.Context) error {
 	if err != nil {
 		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
 	}
+	fmt.Fprintf(c.Response().Writer, "[")
 
 	enc := json.NewEncoder(c.Response())
-	for _, l := range containers {
-		if err := enc.Encode(l.Name); err != nil {
+	for i, l := range containers {
+
+		if err := enc.Encode(l); err != nil {
 			return err
 		}
-		fmt.Fprintf(c.Response().Writer, "| ")
+
+		if len(containers) != i+1 {
+			fmt.Fprintf(c.Response().Writer, ",")
+		}
+
 		c.Response().Flush()
 	}
+	fmt.Fprintf(c.Response().Writer, "]")
 
 	return nil
 }
@@ -54,14 +61,14 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 
 	f, ok := cc.Context.Response().Writer.(http.Flusher)
 	if !ok {
-
 		http.Error(c.Response().Writer, "Streaming unsupported!", http.StatusInternalServerError)
+		return nil
 	}
 
 	container, err := cc.Client.FindContainer(id)
 	if err != nil {
-		log.Error(err)
-		http.Error(c.Response().Writer, "Continer not found!", http.StatusInternalServerError)
+		http.Error(c.Response().Writer, "Continer not found!", http.StatusNotFound)
+		return nil
 	}
 
 	since := time.Now().AddDate(0, 0, -100)
@@ -72,15 +79,24 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 
 	lr := docker.NewLogReader(reader, container.Tty)
 
-loop:
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+outerloop:
 	for {
-		event, ok := <-lr.Events
-		if !ok {
-			break loop
+		select {
+		case event, ok := <-lr.Events:
+			if !ok {
+				break outerloop
+			}
+			logrus.Info(c.Request().URL.Path)
+
+			fmt.Fprintf(c.Response().Writer, "data: %s\n", event.Message)
+			f.Flush()
+		case <-ticker.C:
+			fmt.Fprintln(c.Response().Writer, "PING")
+			f.Flush()
 		}
 
-		fmt.Fprintf(c.Response().Writer, "data: %s\n", event.Message)
-		f.Flush()
 	}
 
 	return nil
