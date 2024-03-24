@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mehranzand/pulseup/api/middleware"
 	"github.com/mehranzand/pulseup/internal/docker"
-	"github.com/sirupsen/logrus"
 )
 
 // GetContainers
@@ -88,7 +87,6 @@ outerloop:
 			if !ok {
 				break outerloop
 			}
-			logrus.Info(c.Request().URL.Path)
 
 			fmt.Fprintf(c.Response().Writer, "data: %s\n", event.Message)
 			f.Flush()

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -21,7 +22,7 @@ const (
 	writerFlagIndex = 0
 	writerSizeIndex = 4
 
-	startingBufLen = 32*1024 + writerPrefixLen + 1
+	startingBufLen = 1*1024*writerPrefixLen + 1
 )
 
 type Log struct {
@@ -91,7 +92,6 @@ func (e *LogReader) readLog(src *bufio.Reader, tty bool) (written int64, err err
 			message, err := src.ReadString('\n')
 			if err != nil {
 				close(e.buffer)
-				logrus.Error(err)
 
 				return 0, err
 			}
@@ -103,6 +103,7 @@ func (e *LogReader) readLog(src *bufio.Reader, tty bool) (written int64, err err
 				var nr2 int
 				nr2, er = src.Read(buf[nr:])
 				nr += nr2
+				logrus.Debugf("nt -> %d", nr)
 				if er == io.EOF {
 					if nr < writerPrefixLen {
 						logrus.Debugf("Corrupted prefix: %v", buf[:nr])
@@ -163,6 +164,8 @@ func (e *LogReader) readLog(src *bufio.Reader, tty bool) (written int64, err err
 			copy(buf, buf[frameSize+writerPrefixLen:])
 			nr -= frameSize + writerPrefixLen
 		}
+
+		printMemUsage()
 	}
 }
 
@@ -179,4 +182,13 @@ func (e *LogReader) parseAndPushEvent(message string) {
 	}
 
 	e.buffer <- logEvent
+}
+
+func printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Printf("Alloc = %v MiB", m.Alloc/1024/1024)
+	fmt.Printf("\tTotalAlloc = %v MiB", m.TotalAlloc/1024/1024)
+	fmt.Printf("\tSys = %v MiB", m.Sys/1024/1024)
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
 }

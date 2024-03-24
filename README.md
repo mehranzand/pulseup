@@ -1,1 +1,4 @@
-﻿pulseup is a smart assistant for Docker continers logs
+﻿pulseUp
+
+Seamless log monitoring for Docker containers with intelligent
+action logs for next-level performance and insight.
