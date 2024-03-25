@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mehranzand/pulseup/api/middleware"
 	"github.com/mehranzand/pulseup/internal/docker"
+	"github.com/sirupsen/logrus"
 )
 
 // GetContainers
@@ -70,7 +71,7 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 		return nil
 	}
 
-	since := time.Now().AddDate(0, 0, -100)
+	since := time.Now().AddDate(0, 0, -365)
 	reader, err := cc.Client.ContainerLogs(cc.Context.Request().Context(), container.ID, strconv.FormatInt(since.Unix(), 10), stdTypes)
 	if err != nil {
 		http.Error(cc.Context.Response().Writer, "Continer not found!", http.StatusInternalServerError)
@@ -78,7 +79,7 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 
 	lr := docker.NewLogReader(reader, container.Tty)
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 outerloop:
 	for {
@@ -88,10 +89,18 @@ outerloop:
 				break outerloop
 			}
 
-			fmt.Fprintf(c.Response().Writer, "data: %s\n", event.Message)
+			if buffer, err := json.Marshal(event); err != nil {
+				logrus.Errorf("json encoding error while streaming %v", err.Error())
+			} else {
+				fmt.Fprintf(c.Response().Writer, "data: %s\n", buffer)
+				f.Flush()
+			}
+
+			fmt.Fprintf(c.Response().Writer, "\n")
 			f.Flush()
+
 		case <-ticker.C:
-			fmt.Fprintln(c.Response().Writer, "PING")
+			fmt.Fprintln(c.Response().Writer, "ping:")
 			f.Flush()
 		}
 

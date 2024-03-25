@@ -2,6 +2,7 @@ package docker
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,18 +20,23 @@ const (
 	Stdout
 	Stderr
 
-	writerPrefixLen = 8
-	writerFlagIndex = 0
-	writerSizeIndex = 4
-
-	startingBufLen = 1*1024*writerPrefixLen + 1
+	headerLen = 8
+	flagIndex = 0
+	sizeIndex = 4
 )
 
+var bufPool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
+}
+
 type Log struct {
+	StdType    StdType  `json:"type"`
 	Timestamp  int64    `json:"ts"`
 	Message    any      `json:"m,omitempty"`
-	Data       string   `json:"data,omitempty"`
-	ActionTags []string `json:"action_tags,omitempty"`
+	Data       string   `json:"d,omitempty"`
+	ActionTags []string `json:"tag,omitempty"`
 }
 
 type LogReader struct {
@@ -38,6 +45,8 @@ type LogReader struct {
 	reader *bufio.Reader
 	wg     sync.WaitGroup
 }
+
+var ErrBadHeader = fmt.Errorf("unable to read header")
 
 func NewLogReader(reader io.Reader, tty bool) *LogReader {
 	logReader := &LogReader{
@@ -55,10 +64,12 @@ func NewLogReader(reader io.Reader, tty bool) *LogReader {
 }
 
 func (e *LogReader) readerProcess(tty bool) {
-	_, err := e.readLog(e.reader, tty)
+	err := e.readLog(e.reader, tty)
 
 	if err != nil {
 		logrus.Debug(err)
+
+		close(e.buffer)
 	}
 
 	e.wg.Done()
@@ -78,99 +89,74 @@ func (e *LogReader) bufferEmitter() {
 	e.wg.Done()
 }
 
-func (e *LogReader) readLog(src *bufio.Reader, tty bool) (written int64, err error) {
-	var (
-		buf       = make([]byte, startingBufLen)
-		bufLen    = len(buf)
-		nr        int
-		er        error
-		frameSize int
-	)
+func (e *LogReader) readLog(reader *bufio.Reader, tty bool) error {
+	//var nr int = 0
 
 	for {
-		if tty {
-			message, err := src.ReadString('\n')
-			if err != nil {
-				close(e.buffer)
+		header := make([]byte, headerLen)
+		buffer := bufPool.Get().(*bytes.Buffer)
+		buffer.Reset()
+		defer bufPool.Put(buffer)
+		var frameSize int
+		var stdType StdType = STDOUT
 
-				return 0, err
+		if tty {
+			message, err := reader.ReadString('\n')
+			if err != nil {
+				return err
 			}
 
-			e.parseAndPushEvent(message)
+			e.parseAndPushEvent(message, stdType)
 
 		} else {
-			for nr < writerPrefixLen {
-				var nr2 int
-				nr2, er = src.Read(buf[nr:])
-				nr += nr2
-				logrus.Debugf("nt -> %d", nr)
-				if er == io.EOF {
-					if nr < writerPrefixLen {
-						logrus.Debugf("Corrupted prefix: %v", buf[:nr])
-						return written, er
-					}
-					break
-				}
-				if er != nil {
-					logrus.Debugf("Error reading header: %s", er)
-					return 0, er
-				}
+			n, err := io.ReadFull(reader, header)
+			if err != nil {
+				return err
 			}
 
-			switch StdType(buf[writerFlagIndex]) {
-			case Stdin:
-				fallthrough
-			case Stdout:
-				// Write on stdout
-				//out = dstout
-			case Stderr:
-				// Write on stderr
-				//out = dsterr
+			if n != 8 {
+				log.Warnf("unable to read header: %v", header)
+				message, _ := reader.ReadString('\n')
+
+				e.parseAndPushEvent(message, stdType)
+
+				return ErrBadHeader
+			}
+
+			switch header[0] {
+			case 1:
+				stdType = STDOUT
+			case 2:
+				stdType = STDERR
 			default:
-				logrus.Debugf("Error selecting output flag index: (%d)", buf[writerFlagIndex])
-				return 0, fmt.Errorf("Unrecognized input header: %d", buf[writerFlagIndex])
+				log.Warnf("undefined std type: %v", header[0])
 			}
 
-			frameSize = int(binary.BigEndian.Uint32(buf[writerSizeIndex : writerSizeIndex+4]))
-			logrus.Debugf("framesize: %d", frameSize)
+			frameSize = int(binary.BigEndian.Uint32(header[4:]))
+			logrus.Warnf("framesize: %d", frameSize)
 
-			if frameSize+writerPrefixLen > bufLen {
-				logrus.Debugf("Extending buffer cap by %d (was %d)", frameSize+writerPrefixLen-bufLen+1, len(buf))
-				buf = append(buf, make([]byte, frameSize+writerPrefixLen-bufLen+1)...)
-				bufLen = len(buf)
+			if frameSize == 0 {
+				continue
 			}
 
-			for nr < frameSize+writerPrefixLen {
-				var nr2 int
-				nr2, er = src.Read(buf[nr:])
-				nr += nr2
-				if er == io.EOF {
-					if nr < frameSize+writerPrefixLen {
-						logrus.Debugf("Corrupted frame: %v", buf[writerPrefixLen:nr])
-						return written, nil
-					}
-					break
-				}
-				if er != nil {
-					logrus.Debugf("Error reading frame: %s", er)
-					return 0, er
-				}
+			_, err = io.CopyN(buffer, reader, int64(frameSize))
+			if err != nil {
+				return err
 			}
 
-			e.parseAndPushEvent(string(buf[writerPrefixLen : frameSize+writerPrefixLen]))
+			e.parseAndPushEvent(buffer.String(), stdType)
 
-			logrus.Debugf("Channel buffer size: %d", len(e.buffer))
+			//nr += frameSize + headerLen
 
-			copy(buf, buf[frameSize+writerPrefixLen:])
-			nr -= frameSize + writerPrefixLen
+			logrus.Info(stdType)
 		}
 
 		printMemUsage()
 	}
 }
 
-func (e *LogReader) parseAndPushEvent(message string) {
-	logEvent := &LogEvent{Message: message}
+func (e *LogReader) parseAndPushEvent(message string, stdType StdType) {
+	logEvent := &LogEvent{Message: message, StdType: stdType.String()}
 
 	if index := strings.IndexAny(message, " "); index != -1 {
 		stamp := message[:index]

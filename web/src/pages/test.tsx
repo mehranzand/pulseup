@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Tag } from 'antd'
+import { Typography, Row, Col, Tag } from "antd";
 import './test.css'
 
+const { Text } = Typography;
+
 function Test() {
-  const [data, setData] = useState<any[]>([]);
-  const [data1, setData1] = useState("")
+  const [data, setData] = useState<any[]>([])
+  const [logs, setLogs] = useState<any[]>([])
   const [current, setCurrent] = useState<any>(null)
   let es: EventSource | null = null;
 
@@ -31,15 +33,17 @@ function Test() {
   useEffect(() => {
     if (current == null) return;
 
-    setData1("")
+    setLogs([])
 
     es = new EventSource("http://localhost:7070/api/logs/stream/localhost/" + current.id)
     es.onmessage = (e) => {
       if (e.data) {
-        setData1((prev) => e.data + '\n' + prev)
+        var m = JSON.parse(e.data)
+
+        setLogs(oldLogs => [m, ...oldLogs])
       }
     };
-    es.onerror = () => setData1("");
+    es.onerror = () => setLogs([]);
 
     es.addEventListener('close', () => close()
   )
@@ -47,22 +51,23 @@ function Test() {
   }, [current]);
 
   return (
-    <div style={{height: "100%", width: "100%", textAlign: "left"}}>
-      <h1 style={{color: 'green'}}>pulseUp</h1>
-      <h2 style={{color: 'GrayText'}}>Seamless log monitoring for Docker containers with intelligent</h2>  
-      <h2 style={{color: 'GrayText', marginTop: -15}}>action logs for next-level performance and insight.</h2> 
-      <br />
-      {data.length > 0 && <h2>containers list</h2>}
-      <ul>
+    <div style={{height: "100%", width: "100%", textAlign: "left", padding: 40}}>
+      {data.length > 0 && <h2 style={{color: 'white'}}>container list</h2>}
+      <ul style={{listStyleType: 'none'}}>
         {data?.map((c, i)=>(
           <li key={i}>
-           <Tag color='#2db7f5'  style={{cursor: "pointer"}}  onClick={() => {setCurrent(c)}}> {c.name}</Tag>  
+           <Tag color='#108ee9'  style={{cursor: "pointer", margin: 5}}  onClick={() => {setCurrent(c)}}> {c.name}</Tag>  
           </li>
           ))}
       </ul>
       <br />
-      {current && <h2>streaming log for {current?.name}</h2>}
-      <h3><span style={{whiteSpace: "pre-line", textAlign: "left"}}>{data1}</span></h3>
+      {current && <h2 style={{color: 'white'}}>streaming log for {current?.name}</h2>}
+      <h3><span style={{whiteSpace: "pre-line", textAlign: "left", color: 'white'}}>{logs.map(item => {
+       return <Row style={{marginBottom: 5}}>
+                <Col span={2}>  <Tag>{item.t}</Tag></Col>
+                <Col span={22}>  <Text type='success'>{item.m}</Text></Col>
+              </Row>
+      })}</span></h3>
     </div>
   )
 }

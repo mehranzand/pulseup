@@ -9,6 +9,7 @@ function DefaultAside() {
       breakpoint="lg"
       collapsedWidth="60"
       width={255}
+      style={{backgroundColor: "#141b1f"}}
     >
 
     </Sider>

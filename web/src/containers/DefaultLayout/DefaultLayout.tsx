@@ -7,18 +7,19 @@ import Footer from "../DefaultLayout/DefaultFooter";
 const { Content } = Layout;
 
 interface LayoutProps {
-  noHeader: boolean
-  noFooter: boolean
+  noHeader?: boolean
+  noFooter?: boolean
   children: React.ReactNode
 }
 
 function DefaultLayout(props: LayoutProps) {
   return (
     <Layout>
-      <Sidebar/>
+              {!props.noHeader && <Header/>}
+     
       <Layout >
-        {!props.noHeader && <Header/>}
-        <Content>{props.children}</Content>
+      <Sidebar/>
+        <Content   style={{backgroundColor: "#1c262d"}}>{props.children}</Content>
         {!props.noFooter && <Footer/>}
       </Layout>
     </Layout>
