@@ -15,7 +15,7 @@ var (
 	distIndexHtml = echo.MustSubFS(indexHTML, "dist")
 )
 
-func RegisterHandlers(r *echo.Echo) {
-	r.FileFS("/", "index.html", distIndexHtml)
-	r.StaticFS("/", distDirFS)
+func RegisterHandlers(e *echo.Echo) {
+	e.FileFS("/", "index.html", distIndexHtml)
+	e.StaticFS("/", distDirFS)
 }

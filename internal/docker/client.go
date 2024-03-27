@@ -187,7 +187,7 @@ func (d *_client) ContainerLogs(ctx context.Context, id string, since string, st
 		ShowStdout: stdType&STDOUT != 0,
 		ShowStderr: stdType&STDERR != 0,
 		Follow:     true,
-		Tail:       "500",
+		Tail:       "200",
 		Timestamps: true,
 		Since:      since,
 	}

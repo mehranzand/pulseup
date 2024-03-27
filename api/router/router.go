@@ -28,5 +28,12 @@ func New() *echo.Echo {
 		},
 	}))
 
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "web/dist",
+		Index:  "index.html",
+		Browse: false,
+		HTML5:  true,
+	}))
+
 	return e
 }

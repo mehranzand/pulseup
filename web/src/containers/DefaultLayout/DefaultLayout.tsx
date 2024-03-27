@@ -15,12 +15,11 @@ interface LayoutProps {
 function DefaultLayout(props: LayoutProps) {
   return (
     <Layout>
-              {!props.noHeader && <Header/>}
-     
+      {!props.noHeader && <Header />}
       <Layout >
-      <Sidebar/>
-        <Content   style={{backgroundColor: "#1c262d"}}>{props.children}</Content>
-        {!props.noFooter && <Footer/>}
+        <Sidebar />
+        <Content style={{ backgroundColor: "#1c262d" }}>{props.children}</Content>
+        {!props.noFooter && <Footer />}
       </Layout>
     </Layout>
   );

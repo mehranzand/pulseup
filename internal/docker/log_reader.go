@@ -71,7 +71,6 @@ func (e *LogReader) readerProcess(tty bool) {
 
 		close(e.buffer)
 	}
-
 	e.wg.Done()
 }
 
@@ -90,15 +89,13 @@ func (e *LogReader) bufferEmitter() {
 }
 
 func (e *LogReader) readLog(reader *bufio.Reader, tty bool) error {
-	//var nr int = 0
-
 	for {
-		header := make([]byte, headerLen)
-		buffer := bufPool.Get().(*bytes.Buffer)
-		buffer.Reset()
-		defer bufPool.Put(buffer)
 		var frameSize int
 		var stdType StdType = STDOUT
+		buffer := bufPool.Get().(*bytes.Buffer)
+		header := make([]byte, headerLen)
+		defer bufPool.Put(buffer)
+		buffer.Reset()
 
 		if tty {
 			message, err := reader.ReadString('\n')
@@ -110,6 +107,7 @@ func (e *LogReader) readLog(reader *bufio.Reader, tty bool) error {
 
 		} else {
 			n, err := io.ReadFull(reader, header)
+
 			if err != nil {
 				return err
 			}
@@ -145,10 +143,6 @@ func (e *LogReader) readLog(reader *bufio.Reader, tty bool) error {
 			}
 
 			e.parseAndPushEvent(buffer.String(), stdType)
-
-			//nr += frameSize + headerLen
-
-			logrus.Info(stdType)
 		}
 
 		printMemUsage()

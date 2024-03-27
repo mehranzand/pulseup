@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -72,14 +73,20 @@ func (h *Handler) StreamLogs(c echo.Context) error {
 	}
 
 	since := time.Now().AddDate(0, 0, -365)
-	reader, err := cc.Client.ContainerLogs(cc.Context.Request().Context(), container.ID, strconv.FormatInt(since.Unix(), 10), stdTypes)
+	reader, err := cc.Client.ContainerLogs(c.Request().Context(), container.ID, strconv.FormatInt(since.Unix(), 10), stdTypes)
 	if err != nil {
-		http.Error(cc.Context.Response().Writer, "Continer not found!", http.StatusInternalServerError)
+		if err == io.EOF {
+			fmt.Fprintf(cc.Context.Response().Writer, "event: container-stopped\ndata: end of stream\n\n")
+			f.Flush()
+		} else {
+			http.Error(cc.Context.Response().Writer, err.Error(), http.StatusInternalServerError)
+		}
+		return nil
 	}
 
 	lr := docker.NewLogReader(reader, container.Tty)
 
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 outerloop:
 	for {
