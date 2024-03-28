@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -31,23 +32,39 @@ func (h *Handler) StreamContainerEvents(c echo.Context) error {
 
 	for {
 		event := <-events
-		log.Tracef("received event: %+v", event)
-		switch event.Name {
-		case "create":
-			log.Debugf("container %s created", event.ActorID)
-			fmt.Fprintf(c.Response().Writer, "event: %s created\n", event.ActorID)
-		case "start":
-			log.Debugf("container %s started", event.ActorID)
-			fmt.Fprintf(c.Response().Writer, "event: %s started\n", event.ActorID)
-		case "destroy":
-			log.Debugf("container %s destroyed", event.ActorID)
-			fmt.Fprintf(c.Response().Writer, "event: %s destroyed\n", event.ActorID)
-		case "die":
-			log.Debugf("container %s died", event.ActorID)
-			fmt.Fprintf(c.Response().Writer, "event: %s died\n", event.ActorID)
-		}
 
+		log.Tracef("docker event %v", event)
+
+		switch event.Action {
+		case "create":
+			if container, err := cc.Client.FindContainer(event.ActorID); err == nil {
+				response := map[string]interface{}{
+					"action":    event.Action,
+					"container": &container,
+				}
+				enc := json.NewEncoder(c.Response())
+
+				if err := enc.Encode(response); err != nil {
+					return err
+				}
+
+				log.Debugf("container %s was %s", event.ActorID, event.Action)
+				fmt.Fprintf(c.Response().Writer, "\n")
+			}
+
+		case "start", "die", "destroy":
+			response := map[string]interface{}{
+				"action": event.Action,
+				"id":     event.ActorID,
+			}
+			enc := json.NewEncoder(c.Response())
+
+			if err := enc.Encode(response); err != nil {
+				log.Debugf("container %s was %s", event.ActorID, event.Action)
+				fmt.Fprintf(c.Response().Writer, "\n")
+			}
+
+		}
 		f.Flush()
 	}
-
 }

@@ -209,7 +209,7 @@ func (d *_client) Events(ctx context.Context, messages chan<- ContainerEvent) {
 			case <-ctx.Done():
 				return
 			case err := <-errors:
-				log.Fatalf("error while listening to docker events: %v. Exiting...", err)
+				log.Fatalf("Exiting while listening to docker events an error occurred: %v.", err)
 			case message, ok := <-dockerMessages:
 				if !ok {
 					log.Errorf("docker events channel closed")
@@ -219,7 +219,7 @@ func (d *_client) Events(ctx context.Context, messages chan<- ContainerEvent) {
 				if message.Type == "container" && len(message.Actor.ID) > 0 {
 					messages <- ContainerEvent{
 						ActorID: message.Actor.ID[:12],
-						Name:    string(message.Action),
+						Action:  string(message.Action),
 						Host:    d.host.ID,
 					}
 				}

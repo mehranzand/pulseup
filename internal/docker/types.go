@@ -18,7 +18,7 @@ type Container struct {
 
 type ContainerEvent struct {
 	ActorID string `json:"actorId"`
-	Name    string `json:"name"`
+	Action  string `json:"action"`
 	Host    string `json:"host"`
 }
 
