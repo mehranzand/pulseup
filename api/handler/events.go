@@ -33,6 +33,9 @@ func (h *Handler) StreamContainerEvents(c echo.Context) error {
 		event := <-events
 		log.Tracef("received event: %+v", event)
 		switch event.Name {
+		case "create":
+			log.Debugf("container %s created", event.ActorID)
+			fmt.Fprintf(c.Response().Writer, "event: %s created\n", event.ActorID)
 		case "start":
 			log.Debugf("container %s started", event.ActorID)
 			fmt.Fprintf(c.Response().Writer, "event: %s started\n", event.ActorID)
@@ -42,16 +45,9 @@ func (h *Handler) StreamContainerEvents(c echo.Context) error {
 		case "die":
 			log.Debugf("container %s died", event.ActorID)
 			fmt.Fprintf(c.Response().Writer, "event: %s died\n", event.ActorID)
-		case "health_status: healthy", "health_status: unhealthy":
-			healthy := "unhealthy"
-			if event.Name == "health_status: healthy" {
-				healthy = "healthy"
-			}
-
-			log.Debugf("container %s is %s", event.ActorID, healthy)
-			fmt.Fprintf(c.Response().Writer, "event: %s is %s\n", event.ActorID, healthy)
 		}
 
 		f.Flush()
 	}
+
 }

@@ -52,14 +52,14 @@ type DockerCLI interface {
 }
 
 type Client interface {
+	Host() *Host
 	ListContainers() ([]Container, error)
 	FindContainer(string) (Container, error)
 	ContainerLogs(context.Context, string, string, StdType) (io.ReadCloser, error)
 	ContainerLogsRange(context.Context, string, time.Time, time.Time, StdType) (io.ReadCloser, error)
 	ContainerActions(action string, containerID string) error
-	Events(context.Context, chan<- ContainerEvent) <-chan error
+	Events(context.Context, chan<- ContainerEvent)
 	Ping(context.Context) (types.Ping, error)
-	Host() *Host
 }
 type _client struct {
 	cli     DockerCLI
@@ -200,7 +200,7 @@ func (d *_client) ContainerLogs(ctx context.Context, id string, since string, st
 	return reader, nil
 }
 
-func (d *_client) Events(ctx context.Context, messages chan<- ContainerEvent) <-chan error {
+func (d *_client) Events(ctx context.Context, messages chan<- ContainerEvent) {
 	dockerMessages, errors := d.cli.Events(ctx, types.EventsOptions{})
 
 	go func() {
@@ -226,8 +226,6 @@ func (d *_client) Events(ctx context.Context, messages chan<- ContainerEvent) <-
 			}
 		}
 	}()
-
-	return errors
 }
 
 func (d *_client) ContainerLogsRange(ctx context.Context, id string, from time.Time, to time.Time, stdType StdType) (io.ReadCloser, error) {
