@@ -1,13 +1,13 @@
 root = "."
 testdata_dir = "testdata"
-tmp_dir = "tmp"
+tmp_dir = "build"
 
 [build]
   args_bin = []
-  bin = "./tmp/pulseup"
-  cmd = 'go build -ldflags "-X main.version=`git tag`" -o ./tmp/pulseup .'
+  bin = "./build/pulseup"
+  cmd = 'go build -ldflags "-X main.version=`git tag`" -o ./build/pulseup .'
   delay = 1000
-  exclude_dir = ["tmp", "vendor", "testdata", "web/node_modules"]
+  exclude_dir = ["build", "vendor", "testdata", "web/node_modules"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
