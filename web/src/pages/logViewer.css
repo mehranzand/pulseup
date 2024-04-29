@@ -1,0 +1,114 @@
+.type-dot {
+  position: relative;
+  top: -1px;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  border-radius: 50%;
+  margin: 0 10px 0 0;
+}
+
+.stdout {
+  background-color: #00a67d;
+}
+
+.stderr {
+  background-color: #FF0000;
+}
+
+.ant-divider-horizontal.ant-divider-with-text-center::before,
+.ant-divider-horizontal.ant-divider-with-text-center::after {
+  border-top: 1px solid white;
+}
+
+.scroll-down {
+  cursor: pointer;
+  background-color: #099cec;
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  margin-left: -16px;
+  display: block;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #FFF;
+  background-size: 12px auto;
+  border-radius: 50%;
+  z-index: 2;
+  opacity: 1;
+  -webkit-transition: all .5s ease-in 1s;
+  transition: all .5s ease-in 1s;
+}
+
+.scroll-down.bounce{
+  -webkit-animation: bounce 1s infinite 1s;
+  animation: bounce 1s infinite 1s;
+  -webkit-transition: all .2s ease-in;
+  transition: all .2s ease-in;
+  transform: scale(1)
+}
+
+.scroll-down:before {
+  position: absolute;
+  top: calc(50% - 7px);
+  left: calc(50% - 7px);
+  transform: rotate(-45deg);
+  display: block;
+  width: 12px;
+  height: 12px;
+  content: "";
+  border: 2px solid white;
+  border-width: 0px 0 2px 2px;
+}
+
+@keyframes bounce {
+  0%,
+  100%,
+  20%,
+  50%,
+  80% {
+    -webkit-transform: translateY(0);
+    -ms-transform: translateY(0);
+    transform: translateY(0);
+  }
+
+  40% {
+    -webkit-transform: translateY(-10px);
+    -ms-transform: translateY(-10px);
+    transform: translateY(-10px);
+  }
+
+  60% {
+    -webkit-transform: translateY(-5px);
+    -ms-transform: translateY(-5px);
+    transform: translateY(-5px);
+  }
+}
+
+.ant-typography-copy {
+  display: none !important;
+}
+
+.log-row:hover .ant-typography-copy {
+  display: inline-block !important;
+}
+
+.log-message{
+  font-size: 18px;
+  color: #e5e7eb;
+  white-space: nowrap;
+  word-break: break-word;
+  font-family:'monospace'
+}
+
+.log-row{
+  margin-top: 5px;
+  margin-bottom: 5px;
+  color: #fff ;
+  padding-left: 20px;
+}
+
+.log-wrapper{
+  margin-bottom: 1rem;
+}

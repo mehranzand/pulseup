@@ -1,0 +1,10 @@
+.continer-row {
+    cursor: "pointer";
+    margin: 5px 0px;
+}
+.continer-name{
+    color: #fff;
+    white-space: 'nowrap';
+    font-size: 18px;
+    align-items: baseline;
+}

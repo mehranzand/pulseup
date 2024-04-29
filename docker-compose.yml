@@ -1,0 +1,11 @@
+version: "3.4"
+services:
+  pulseup:
+    image: mehranzand/pulseup:v1.0.1
+    container_name: pulseup
+    ports:
+      - 7070:7070
+    build:
+      context: .
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
