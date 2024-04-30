@@ -3,7 +3,7 @@ docker-build:
 	docker compose up --build --force-recreate
 
 .PHONY: run-dev
-run-dev:
+dev:
 	cd web && yarn dev & air && fg
 
 .PHONY: web-dev

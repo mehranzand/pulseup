@@ -10,8 +10,8 @@ import (
 )
 
 func CreateServer(clients map[string]docker.Client, config *handler.Config, assets fs.FS) {
-	h := handler.NewHandler(config)
-	r := router.New(assets)
+	h := handler.NewHandler(config, assets)
+	r := router.New(assets, h)
 	r.Use(middleware.DockerMiddleware(r, clients))
 	base := r.Group(config.Base + "/api")
 	h.Register(base)
