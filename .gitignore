@@ -10,3 +10,9 @@ web/dist
 .env.production.local
 yarn-debug.log*
 yarn-error.log*
+logs
+*.log
+*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
