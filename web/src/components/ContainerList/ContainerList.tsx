@@ -1,17 +1,14 @@
 import { useEffect } from 'react'
-import { Row, Col, Typography } from 'antd'
+import { Row, Col } from 'antd'
 import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from "../../hooks";
 import { fetchContainers } from '../../stores/slices/containerSlice';
 import ContainerRow from '../ContainerRow';
-import DotsLoader from '../DotsLoader';
 import './containerList.css'
 
 interface ContainerListProps {
   host?: string
 }
-
-const { Title } = Typography
 
 function ContainerList(props: ContainerListProps) {
   const dispatch = useAppDispatch();
@@ -34,12 +31,6 @@ function ContainerList(props: ContainerListProps) {
 
   return (<>
     <Row>
-      <Col span={24}>
-        {loading ? <DotsLoader style={{ paddingTop: 40, paddingBottom: 20 }} /> :
-          <Title className='host-title' level={4}>{props.host ? props.host : 'localhost'}</Title>}
-      </Col>
-    </Row>
-    <Row>
       <Col>
         <ul className='container-ul'>
           {!loading && data?.map((c, i) => (
@@ -47,7 +38,6 @@ function ContainerList(props: ContainerListProps) {
               <ContainerRow continer={c}></ContainerRow>
             </Link>
           ))}
-
           {!loading && error && <li>{error}</li>}
         </ul>
       </Col>

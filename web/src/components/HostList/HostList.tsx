@@ -1,14 +1,21 @@
 
+import { Row, Col } from "antd";
 import './hostList.css'
 
 interface HostListProps {
-  host?: string
+  hosts: { name: string; id: string }[];
 }
 
 function HostList(props: HostListProps) {
-
   return (
-    <>{props.host}</>
+    <Row>
+      <Col span={24}>
+        {props.hosts?.length}
+      {props.hosts?.map(host => 
+        <a>{host.name}</a>
+      )}
+      </Col>
+    </Row>
   )
 }
 

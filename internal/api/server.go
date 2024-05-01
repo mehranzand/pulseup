@@ -15,5 +15,5 @@ func CreateServer(clients map[string]docker.Client, config *handler.Config, asse
 	r.Use(middleware.DockerMiddleware(r, clients))
 	base := r.Group(config.Base + "/api")
 	h.Register(base)
-	r.Logger.Fatal(r.Start(config.Addr))
+	r.Logger.Fatal(r.Start(config.Adderss))
 }

@@ -1,0 +1,18 @@
+.host-title {
+
+    margin-left: 20px;
+}
+
+.host-title > h4 {
+    color: #fff !important;
+    font-weight: bold !important;
+}
+
+.back-button{
+    background-color: transparent !important;
+    color: #fff !important;
+}
+
+.back-button:hover{
+    background-color: #099cec !important;
+}

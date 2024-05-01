@@ -24,7 +24,7 @@ var (
 var content embed.FS
 
 type args struct {
-	Addr                 string              `arg:"env:PULSEUP_ADDR" default:":7070" help:"sets host:port to bind for server. This is rarely needed inside a docker container."`
+	Adderss              string              `arg:"env:PULSEUP_ADDRESS" default:":7070" help:"sets host:port to bind for server. This is rarely needed inside a docker container."`
 	Base                 string              `arg:"env:PULSEUP_BASE" default:"/" help:"sets the base for http router."`
 	Hostname             string              `arg:"env:PULSEUP_HOSTNAME" help:"sets the hostname for display. This is useful with multiple pulseUp instances."`
 	LogLevel             string              `arg:"env:PULSEUP_LOGLEVEL" default:"info" help:"set pulseUp log level. Use debug for more logging."`
@@ -47,8 +47,8 @@ func main() {
 	}
 
 	args := parseArgs()
-	if len(args.Addr) == 0 {
-		log.Fatal("PULSEUP_ADDR can't be null or empty")
+	if len(args.Adderss) == 0 {
+		log.Fatal("PULSEUP_ADDRESS can't be null or empty")
 	}
 
 	log.Infof("💡 pulseUp version %s", version)
@@ -121,7 +121,7 @@ func createDockerClients(hostname string, args args) map[string]docker.Client {
 
 func createServer(args args, clients map[string]docker.Client) {
 	config := handler.Config{
-		Addr:         args.Addr,
+		Adderss:      args.Adderss,
 		Base:         args.Base,
 		Version:      version,
 		Hostname:     args.Hostname,

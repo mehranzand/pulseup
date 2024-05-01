@@ -24,6 +24,7 @@ func (h *Handler) IndexHandler(c echo.Context) error {
 		"authProvider": h.config.AuthProvider,
 		"version":      h.config.Version,
 		"hostname":     h.config.Hostname,
+		"address":      h.config.Adderss,
 		"hosts":        hosts,
 	}
 

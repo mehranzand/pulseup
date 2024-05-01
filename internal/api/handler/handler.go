@@ -19,7 +19,7 @@ const (
 
 type Config struct {
 	Base         string       `json:"base"`
-	Addr         string       `json:"address"`
+	Adderss      string       `json:"address"`
 	Version      string       `json:"version"`
 	Hostname     string       `json:"host_name"`
 	AuthProvider AuthProvider `json:"auth_provider"`
