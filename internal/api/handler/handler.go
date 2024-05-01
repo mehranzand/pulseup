@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/fs"
 	"log"
+
+	"github.com/mehranzand/pulseup/internal/docker"
 )
 
 type AuthProvider string
@@ -16,19 +18,20 @@ const (
 )
 
 type Config struct {
-	Base         string
-	Addr         string
-	Version      string
-	Hostname     string
-	AuthProvider AuthProvider
+	Base         string       `json:"base"`
+	Addr         string       `json:"address"`
+	Version      string       `json:"version"`
+	Hostname     string       `json:"host_name"`
+	AuthProvider AuthProvider `json:"auth_provider"`
 }
 
 type Handler struct {
 	config    *Config
 	indexTmpl *template.Template
+	clients   map[string]docker.Client
 }
 
-func NewHandler(config *Config, assets fs.FS) *Handler {
+func NewHandler(config *Config, clients map[string]docker.Client, assets fs.FS) *Handler {
 	file, err := assets.Open("index.html")
 	if err != nil {
 		log.Fatal(err)
@@ -52,5 +55,6 @@ func NewHandler(config *Config, assets fs.FS) *Handler {
 	return &Handler{
 		config:    config,
 		indexTmpl: tmpl,
+		clients:   clients,
 	}
 }
