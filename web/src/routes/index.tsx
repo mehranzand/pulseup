@@ -1,14 +1,14 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 
-const DefaultLayout = React.lazy(() => import("../layout/DefaultLayout"));
-const Test = React.lazy(() => import("../pages/LogViewer"));
+const Layout = React.lazy(() => import("../layout"));
+const LogViewer = React.lazy(() => import("../pages/LogViewer"));
 
 export const AppRoutes = (
   <React.Suspense>
     <Routes>
-      <Route path="/" element={<DefaultLayout noFooter children={null}/>} />
-      <Route path="/container/:id" element={<DefaultLayout noFooter children={<Test />}/>} />
+      <Route path="/" element={<Layout noFooter children={null}/>} />
+      <Route path="/container/:id" element={<Layout noFooter children={<LogViewer />}/>} />
     </Routes>
   </React.Suspense>
 );

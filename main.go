@@ -49,7 +49,6 @@ func main() {
 	args := parseArgs()
 	if len(args.Addr) == 0 {
 		log.Fatal("PULSEUP_ADDR can't be null or empty")
-
 	}
 
 	log.Infof("💡 pulseUp version %s", version)
