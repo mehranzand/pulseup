@@ -9,7 +9,8 @@ import { useState } from "react";
 const { Title } = Typography
 
 function Aside() {
-  let [viewMode] = useState<"host" | "container">("host")
+  let [viewMode] = useState<"host" | "container">("container")
+  let [selectedHost] = useState("localhost")
 
   return (
     <AntLayout.Sider
@@ -21,15 +22,15 @@ function Aside() {
       <Row>
         <Col span={24}>
           <Space align="baseline" style={{marginLeft: 10}}>
-            <Tooltip title="back to hosts list">
+           {config.hosts.length > 1 && <Tooltip title="go to hosts list">
               <Button type="primary"size="small" shape="circle" className="back-button" icon={<LeftOutlined />} />
-            </Tooltip>
-            <Title level={4} style={{color: '#fff'}}>{config.hosts[0].name}</Title>
+            </Tooltip>}
+            <Title level={4} style={{color: '#fff'}}>{config.hosts[1].name}</Title>
           </Space>
         </Col>
       </Row>
       {viewMode == "host" && <HostList hosts={config.hosts}></HostList>}
-      {viewMode == "container" && <ContainerList ></ContainerList>}
+      {viewMode == "container" && <ContainerList host={selectedHost} ></ContainerList>}
     </AntLayout.Sider>
   );
 }

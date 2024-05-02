@@ -7,7 +7,7 @@ import ContainerRow from '../ContainerRow';
 import './containerList.css'
 
 interface ContainerListProps {
-  host?: string
+  host: string
 }
 
 function ContainerList(props: ContainerListProps) {
@@ -26,7 +26,7 @@ function ContainerList(props: ContainerListProps) {
   }, [data])
 
   useEffect(() => {
-    dispatch(fetchContainers(props.host ? props.host : 'localhost'))
+    dispatch(fetchContainers(props.host))
   }, [dispatch]);
 
   return (<>

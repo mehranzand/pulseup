@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { API_URLS } from "../../configs/api";
 import { Log } from "../../types/Log";
 import _ from 'lodash'
+import { Container } from "../../types/Container";
+
 
 export default function useLogSourceEvent() {
-    let params = useParams()
+    const location = useLocation();
+    const container = location.state as Container
     let es: EventSource | null = null
     let debounceBuffer = _.debounce(flushBuffer, 250, { maxWait: 500 })
     let buffer: Log[] = []
@@ -65,9 +68,7 @@ export default function useLogSourceEvent() {
     }
 
     useEffect(() => {
-        if (params.id === undefined) return
-
-        es = new EventSource(API_URLS.logs_stream_url.replace(':id', params.id));
+        es = new EventSource(API_URLS.logs_stream_url.replace(':host', container.host).replace(':id', container.id));
         es.onmessage = (e) => {
             handleEvent(e.data);
         };
@@ -91,7 +92,8 @@ export default function useLogSourceEvent() {
             const converted: Log = {
                 message: message.m,
                 date: message.ts as number,
-                type: message.t
+                type: message.t,
+                rowType: "log"
             };
             buffer.push(converted)
             debounceBuffer()
@@ -101,8 +103,7 @@ export default function useLogSourceEvent() {
             clear()
             close()
         }
-    }, [params])
-
+    }, [location])
 
     return { messages, loading, pause, resume }
 }

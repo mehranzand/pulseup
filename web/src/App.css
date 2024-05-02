@@ -17,3 +17,7 @@
   border-radius: 30px;
   border: 64px solid #192025;
 }
+
+body{
+  overflow: hidden;
+}
