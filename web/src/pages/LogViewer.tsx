@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation} from 'react-router-dom';
 import ContinerInfoBar from '../components/ContinerInfoBar';
 import DotsLoader from '../components/DotsLoader';
 import useLogSourceEvent from '../lib/hooks/useLogSourceEvent';
@@ -16,17 +16,23 @@ const ITEM_SIZE = 32;
 
 function LogViewer() {
   let params = useParams()
+  let location = useLocation()
   const { messages, loading, pause, resume } = useLogSourceEvent()
   const listRef = createRef<HTMLDivElement>();
   const [paused, setPaused] = useState<boolean>(false)
 
-  function handleScroll() {
+  function scrollToEnd() {
    listRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
   }
 
   useEffect(() => {
+    setPaused(resume())
+    scrollToEnd()
+  }, [location, !loading])
+
+  useEffect(() => {
     if (!paused) {
-     listRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
+     scrollToEnd()
     }
   }, [messages])
 
@@ -90,7 +96,7 @@ function LogViewer() {
         )}
       </AutoSizer>
       {loading && <DotsLoader style={{ margin: '45vh' }} />}
-      {!loading && messages.length > 0 && <button className={'scroll-down' + (paused ? ' bounce' : '')} onClick={handleScroll}></button>}
+      {!loading && messages.length > 0 && <button className={'scroll-down' + (paused ? ' bounce' : '')} onClick={scrollToEnd}></button>}
     </>
   )
 }
