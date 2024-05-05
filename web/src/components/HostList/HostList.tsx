@@ -1,20 +1,28 @@
 
-import { Row, Col } from "antd";
+import { Row, Col, Typography, Space } from "antd";
+import { HddOutlined } from '@ant-design/icons';
 import './hostList.css'
 
 interface HostListProps {
   hosts: { name: string; id: string }[];
+  onSelect: (host: any) => void;
 }
 
 function HostList(props: HostListProps) {
   return (
-    <Row>
-      <Col span={24}>
-        {props.hosts?.map(host =>
-          <a>{host.name}</a>
-        )}
-      </Col>
-    </Row>
+    <>
+      {props.hosts?.map(host =>
+        <Row>
+          <Col span={24}>
+            <Typography.Title level={5} className="title">
+              <Space size={"small"} onClick={() => props.onSelect(host)}>
+                <HddOutlined />
+                {host.name}
+              </Space>
+            </Typography.Title>
+          </Col>
+        </Row>
+      )}</>
   )
 }
 

@@ -1,0 +1,9 @@
+.title  {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 206px;
+    padding-left: 20px;
+    color: #fff !important;
+    cursor: pointer;
+}

@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type Host struct {
@@ -23,6 +22,8 @@ func ParseConnection(connection string) (Host, error) {
 	if err != nil {
 		return Host{}, err
 	}
+
+	name := remoteUrl.Hostname()
 
 	basePath, err := filepath.Abs("./certs")
 	if err != nil {
@@ -45,8 +46,8 @@ func ParseConnection(connection string) (Host, error) {
 	}
 
 	return Host{
-		ID:         strings.ReplaceAll(remoteUrl.String(), "/", ""),
-		Name:       connection,
+		ID:         name,
+		Name:       name,
 		URL:        remoteUrl,
 		CertPath:   certPath,
 		CACertPath: cacertPath,

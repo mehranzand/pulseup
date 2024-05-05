@@ -1,36 +1,49 @@
 import { Layout as AntLayout, Row, Col, Typography, Button, Space, Tooltip } from "antd";
-import { LeftOutlined } from '@ant-design/icons';
+import { MenuOutlined } from '@ant-design/icons';
 import ContainerList from "../components/ContainerList";
 import HostList from "../components/HostList";
 import config from "../stores/config";
-import './aside.css'
 import { useState } from "react";
+import './aside.css';
+
 
 const { Title } = Typography
 
 function Aside() {
-  let [viewMode] = useState<"host" | "container">("container")
-  let [selectedHost] = useState("localhost")
+  let [viewMode, setViewMode] = useState<"host" | "container">("container")
+  let [selectedHost, setSelectedHost] = useState("localhost")
+
+  const handleClickHostList = () => {
+    if (viewMode == 'container') {
+      setViewMode('host')
+    }
+  }
+
+  const handleSelectHostCallback=(host : any) =>{
+    setSelectedHost(host.name)
+    setViewMode("container")
+  }
 
   return (
     <AntLayout.Sider
-      breakpoint="lg"
-      collapsedWidth="60"
       width={255}
-      style={{ backgroundColor: "#141b1f", minHeight: 'calc(100vh - 40px)' }}
+      className="aside"
     >
-      <Row>
+      {viewMode == "container" && <><Row>
         <Col span={24}>
-          <Space align="baseline" style={{marginLeft: 10}}>
-           {config.hosts.length > 1 && <Tooltip title="go to hosts list">
-              <Button type="primary"size="small" shape="circle" className="back-button" icon={<LeftOutlined />} />
+          <Space align="baseline">
+            <Tooltip title={selectedHost} >
+              <Title level={4} className="host-title">{selectedHost}</Title>
+            </Tooltip>
+            {config.hosts.length > 1 && <Tooltip title="host list" placement="top">
+              <Button type="primary" size="small" className="back-button" icon={<MenuOutlined />} onClick={handleClickHostList} />
             </Tooltip>}
-            <Title level={4} style={{color: '#fff'}}>{config.hosts[1].name}</Title>
           </Space>
         </Col>
       </Row>
-      {viewMode == "host" && <HostList hosts={config.hosts}></HostList>}
-      {viewMode == "container" && <ContainerList host={selectedHost} ></ContainerList>}
+        <ContainerList host={selectedHost} ></ContainerList></>}
+      {viewMode == "host" && <HostList hosts={config.hosts} onSelect={handleSelectHostCallback}></HostList>}
+
     </AntLayout.Sider>
   );
 }

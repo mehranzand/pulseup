@@ -1,18 +1,23 @@
 .host-title {
-
-    margin-left: 20px;
-}
-
-.host-title > h4 {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 206px;
+    padding-left: 20px;
     color: #fff !important;
-    font-weight: bold !important;
+    cursor: help;
 }
 
-.back-button{
+.back-button {
     background-color: transparent !important;
     color: #fff !important;
 }
 
-.back-button:hover{
+.back-button:hover {
     background-color: #099cec !important;
+}
+
+.aside{
+    background-color: #141b1f !important;
+    min-height: calc(100vh - 40px)
 }
