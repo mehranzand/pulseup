@@ -4,14 +4,16 @@ import ContainerList from "../components/ContainerList";
 import HostList from "../components/HostList";
 import config from "../stores/config";
 import { useState } from "react";
+import { useAppSelector, useAppDispatch } from "../hooks"
+import { setCurrent } from "../stores/slices/hostSlice"
 import './aside.css';
-
 
 const { Title } = Typography
 
 function Aside() {
   let [viewMode, setViewMode] = useState<"host" | "container">("container")
-  let [selectedHost, setSelectedHost] = useState("localhost")
+  const { current } = useAppSelector((state) => state.host)
+  const dispatch = useAppDispatch()
 
   const handleClickHostList = () => {
     if (viewMode == 'container') {
@@ -19,9 +21,10 @@ function Aside() {
     }
   }
 
-  const handleSelectHostCallback=(host : any) =>{
-    setSelectedHost(host.name)
+  const handleSelectHostCallback = (host: string) => {
     setViewMode("container")
+
+    dispatch(setCurrent(host))
   }
 
   return (
@@ -32,8 +35,8 @@ function Aside() {
       {viewMode == "container" && <><Row>
         <Col span={24}>
           <Space align="baseline">
-            <Tooltip title={selectedHost} >
-              <Title level={4} className="host-title">{selectedHost}</Title>
+            <Tooltip title={current} >
+              <Title level={4} className="host-title">{current}</Title>
             </Tooltip>
             {config.hosts.length > 1 && <Tooltip title="host list" placement="top">
               <Button type="primary" size="small" className="back-button" icon={<MenuOutlined />} onClick={handleClickHostList} />
@@ -41,9 +44,8 @@ function Aside() {
           </Space>
         </Col>
       </Row>
-        <ContainerList host={selectedHost} ></ContainerList></>}
-      {viewMode == "host" && <HostList hosts={config.hosts} onSelect={handleSelectHostCallback}></HostList>}
-
+        <ContainerList></ContainerList></>}
+      {viewMode == "host" && <HostList hosts={config.hosts} onSelect={handleSelectHostCallback}></HostList>} 
     </AntLayout.Sider>
   );
 }

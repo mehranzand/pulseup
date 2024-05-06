@@ -11,7 +11,7 @@ interface ContinerInfoBarProps {
 const { Text } = Typography;
 
 function ContinerInfoBar(props: ContinerInfoBarProps) {
-  const continer = useAppSelector((state) => state.containers.data.find(a => a.id == props.continerId))
+  const container = useAppSelector((state) => state.containers.data.find(a => a.id == props.continerId))
 
   const tagColor = (c: Container | undefined) => {
     if (c == undefined) return
@@ -29,13 +29,13 @@ function ContinerInfoBar(props: ContinerInfoBarProps) {
   return (
     <Row className='container-bar' align='middle'>
       <Col>
-        {continer && <Space align='baseline'>
+        {container && <Space align='baseline'>
           <span className='container-name' >
-            {continer?.name}
+            {container?.name}
           </span>
-          <Text className='continer-tag' keyboard>{continer?.image}</Text>
-          <Text className='continer-tag' keyboard>{continer?.status}</Text>
-          <Tag color={tagColor(continer)}>{continer?.state}</Tag>
+          <Text className='continer-tag' keyboard>{container?.image}</Text>
+          <Text className='continer-tag' keyboard>{container?.status}</Text>
+          <Tag color={tagColor(container)}>{container?.state}</Tag>
         </Space>}
       </Col>
     </Row>

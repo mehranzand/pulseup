@@ -6,13 +6,11 @@ import { fetchContainers } from '../../stores/slices/containerSlice';
 import ContainerRow from '../ContainerRow';
 import './containerList.css'
 
-interface ContainerListProps {
-  host: string
-}
 
-function ContainerList(props: ContainerListProps) {
+function ContainerList() {
   const dispatch = useAppDispatch();
   const { data, loading, error } = useAppSelector(state => state.containers)
+  const { current } = useAppSelector((state) => state.host)
 
   useEffect(() => {
     let title = 'pulseUp for Docker'
@@ -26,8 +24,10 @@ function ContainerList(props: ContainerListProps) {
   }, [data])
 
   useEffect(() => {
-    dispatch(fetchContainers(props.host))
-  }, [dispatch]);
+    if (current === undefined) return
+
+    dispatch(fetchContainers(current))
+  }, [dispatch, current]);
 
   return (<>
     <Row>
