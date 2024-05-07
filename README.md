@@ -37,4 +37,4 @@ services:
       - 7070:7070
 ```
 
-This configuration achieves the same setup as the Docker command above, allowing you to manage your puleUp instance in a more structured manner with Docker Compose.
+This configuration achieves the same setup as the Docker command above, allowing you to manage your pulseUp instance in a more structured manner with Docker Compose.
