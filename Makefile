@@ -2,7 +2,7 @@ TAG := "$$(git describe --abbrev=0 --tags)"
 
 .PHONY: docker-build
 docker-build:
-	docker build --build-arg TAG=$(TAG) -t mehranzand/pulseup:$(TAG) .
+	docker build --build-arg TAG=$(TAG) -t mehranzand/pulseup:$(TAG) -t mehranzand/pulseup:latest .
 
 .PHONY: run-dev
 dev:
