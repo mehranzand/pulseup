@@ -15,5 +15,6 @@ func CreateServer(clients map[string]docker.Client, config *handler.Config, asse
 	r.Use(middleware.DockerMiddleware(r, clients))
 	base := r.Group(config.Base + "/api")
 	h.Register(base)
+	r.HideBanner = true
 	r.Logger.Fatal(r.Start(config.Adderss))
 }
