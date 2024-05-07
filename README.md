@@ -3,10 +3,12 @@
 Seamless log monitoring for Docker containers with intelligent
 action logs for next-level performance and insight.
 
-
 ## Getting Started
 Pull the latest release with:
-    $ docker pull mehranzand/pulseup:latest
+
+```
+docker pull mehranzand/pulseup:latest
+```
 
 ### Using pulseUp with Docker Container:
 
@@ -22,6 +24,7 @@ This command creates a container named "pulseup" from the latest pulseUp image, 
 ### Using pulseUp with Docker Compose:
 
 Alternatively, you can use Docker Compose to manage your pulseUp service. Here's a sample Docker Compose file:
+
 ```
 version: "3.4"
 services:
@@ -33,4 +36,5 @@ services:
     ports:
       - 7070:7070
 ```
+
 This configuration achieves the same setup as the Docker command above, allowing you to manage your puleUp instance in a more structured manner with Docker Compose.
