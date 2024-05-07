@@ -1,6 +1,5 @@
-import config from "../stores/config"
 
-const API_BASE_URL = `http://${config.address}/api/`
+const API_BASE_URL = `${window.location.origin}/api/`
 
 export const API_URLS = {
     containers_url: `${API_BASE_URL}:host/containers`,

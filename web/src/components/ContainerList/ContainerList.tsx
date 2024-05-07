@@ -6,7 +6,6 @@ import { fetchContainers } from '../../stores/slices/containerSlice';
 import ContainerRow from '../ContainerRow';
 import './containerList.css'
 
-
 function ContainerList() {
   const dispatch = useAppDispatch();
   const { data, loading, error } = useAppSelector(state => state.containers)
@@ -14,10 +13,13 @@ function ContainerList() {
 
   useEffect(() => {
     let title = 'pulseUp for Docker'
-    const running = data.filter(d => d.state == 'running')
 
-    if (running.length > 0) {
-      title = `${running.length} containers | pulseUp`
+    if (data.length > 0) {
+      const running = data.filter(d => d.state == 'running')
+
+      if (running.length > 0) {
+        title = `${running.length} containers | pulseUp`
+      }
     }
 
     document.title = title
@@ -33,7 +35,7 @@ function ContainerList() {
     <Row>
       <Col>
         <ul className='container-ul'>
-          {!loading && data?.map((c, i) => (
+          {!loading && data.length > 0 && data.map((c, i) => (
             <Link key={i} to={'/container/' + c.id} state={c}>
               <ContainerRow continer={c}></ContainerRow>
             </Link>

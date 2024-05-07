@@ -1,7 +1,7 @@
 version: "3.4"
 services:
   pulseup:
-    image: mehranzand/pulseup:v1.0.1
+    image: mehranzand/pulseup:v1.0.2
     container_name: pulseup
     ports:
       - 7070:7070

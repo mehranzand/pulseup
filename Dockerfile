@@ -28,13 +28,11 @@ COPY --from=node /build/dist ./web/dist
 
 # Copy all other files
 COPY internal ./internal
-COPY api ./api
-COPY utils ./utils
 COPY main.go ./
 COPY .env ./
 
 # Args
-ARG TAG=dev
+ARG TAG=head
 ARG TARGETOS TARGETARCH
 
 # Build binary
@@ -44,6 +42,6 @@ FROM scratch
 
 COPY --from=builder /pulseup ./
 
-EXPOSE 8080
+EXPOSE 7070
 
 ENTRYPOINT ["/pulseup"]
