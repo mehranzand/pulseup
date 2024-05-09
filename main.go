@@ -10,10 +10,14 @@ import (
 	"github.com/mehranzand/pulseup/internal/api"
 	"github.com/mehranzand/pulseup/internal/api/handler"
 	"github.com/mehranzand/pulseup/internal/docker"
+	"github.com/mehranzand/pulseup/internal/models"
 
 	"github.com/alexflint/go-arg"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 var (
@@ -54,14 +58,24 @@ func main() {
 	log.Infof("💡 pulseUp version %s", version)
 
 	clients := createDockerClients(args.Hostname, args)
-
 	if len(clients) == 0 {
 		log.Fatal("Could not connect to any Dockerd")
 	} else {
 		log.Infof("Totaly connected to %d Dockerd(s)", len(clients))
 	}
 
-	createServer(args, clients)
+	db, err := dbInit()
+	if err != nil {
+		log.Fatalf("failed to connect internal database %s", err)
+	}
+
+	//watcher := action.NewLogWatcher(clients)
+
+	// watcher.AddContainer("localhost", "7206f2955e3a")
+	// watcher.AddContainer("localhost", "ac204196fb54")
+	// watcher.AddContainer("localhost", "300d1decb6f3")
+
+	createServer(args, clients, db)
 }
 
 func createDockerClients(hostname string, args args) map[string]docker.Client {
@@ -119,7 +133,7 @@ func createDockerClients(hostname string, args args) map[string]docker.Client {
 	return clients
 }
 
-func createServer(args args, clients map[string]docker.Client) {
+func createServer(args args, clients map[string]docker.Client, db *gorm.DB) {
 	config := handler.Config{
 		Adderss:      args.Adderss,
 		Base:         args.Base,
@@ -133,7 +147,7 @@ func createServer(args args, clients map[string]docker.Client) {
 		log.Fatalf("Could not open web content at dist folder: %v", err)
 	}
 
-	api.CreateServer(clients, &config, assets)
+	api.CreateServer(clients, &config, assets, db)
 }
 
 func parseArgs() args {
@@ -170,4 +184,16 @@ func configureLogger(level string) {
 		DisableColors: false,
 		FullTimestamp: false,
 	})
+}
+
+func dbInit() (*gorm.DB, error) {
+	target := "build/pulseup.db"
+	db, err := gorm.Open(sqlite.Open(target), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	db.AutoMigrate(&models.LogWatcher{})
+
+	return db, nil
 }

@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Host struct {
@@ -46,7 +47,7 @@ func ParseConnection(connection string) (Host, error) {
 	}
 
 	return Host{
-		ID:         name,
+		ID:         strings.ReplaceAll(remoteUrl.String(), "/", ""),
 		Name:       name,
 		URL:        remoteUrl,
 		CertPath:   certPath,
