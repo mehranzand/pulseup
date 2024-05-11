@@ -44,7 +44,7 @@ ENV TARGETOS=linux
 ENV TARGETARCH=amd64
 
 # Build binary
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags "-s -w -X main.version=$TAG -extldflags '-static'" -o pulseup
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags "-s -w -X main.version=$TAG -extldflags '-static'" -o pulseup
 
 FROM scratch
 
