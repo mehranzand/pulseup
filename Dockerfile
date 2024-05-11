@@ -16,8 +16,10 @@ RUN yarn build
 FROM golang:1.22.2-alpine AS builder
 
 RUN mkdir /pulseup
-
 WORKDIR /pulseup
+
+ENV CGO_ENABLED=1
+RUN apk add --no-cache --update git build-base
 
 # Copy go mod files
 COPY go.* ./
@@ -36,7 +38,7 @@ ARG TAG=head
 ARG TARGETOS TARGETARCH
 
 # Build binary
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-s -w -X main.version=$TAG" -o pulseup
+RUN GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X main.version=$TAG" -o pulseup
 
 FROM scratch
 

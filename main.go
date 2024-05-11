@@ -66,7 +66,9 @@ func main() {
 
 	db, err := dbInit()
 	if err != nil {
-		log.Fatalf("failed to connect internal database %s", err)
+		log.Fatalf("Failed to connect internal database %s", err)
+	} else {
+		log.Infof("Successfully established connection to database")
 	}
 
 	//watcher := action.NewLogWatcher(clients)
@@ -187,7 +189,7 @@ func configureLogger(level string) {
 }
 
 func dbInit() (*gorm.DB, error) {
-	target := "build/pulseup.db"
+	target := "pulseup.db"
 	db, err := gorm.Open(sqlite.Open(target), &gorm.Config{})
 	if err != nil {
 		return nil, err

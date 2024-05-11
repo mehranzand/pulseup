@@ -16,3 +16,4 @@ logs
 .vscode/*
 !.vscode/extensions.json
 .idea
+pulseup.db
