@@ -10,17 +10,20 @@ import (
 
 	"github.com/labstack/gommon/log"
 	"github.com/mehranzand/pulseup/internal/docker"
+	"gorm.io/gorm"
 )
 
 type LogWatcher struct {
 	Clients     map[string]docker.Client
 	observatory map[string]interface{}
+	db          *gorm.DB
 }
 
-func NewLogWatcher(clients map[string]docker.Client) *LogWatcher {
+func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 	logWatcher := &LogWatcher{
 		Clients:     clients,
 		observatory: make(map[string]interface{}),
+		db:          db,
 	}
 
 	return logWatcher
@@ -28,7 +31,7 @@ func NewLogWatcher(clients map[string]docker.Client) *LogWatcher {
 
 func (w *LogWatcher) AddContainer(host string, id string) {
 	ctx, cancel := context.WithCancel(context.Background())
-	go w.watchContainer(ctx, host, id)
+	go w.addContainer(ctx, host, id)
 	w.observatory[id] = cancel
 }
 
@@ -37,7 +40,7 @@ func (w *LogWatcher) RemoveContainer(host string, id string) {
 	delete(w.observatory, id)
 }
 
-func (w *LogWatcher) watchContainer(ctx context.Context, host string, id string) {
+func (w *LogWatcher) addContainer(ctx context.Context, host string, id string) {
 	var stdTypes docker.StdType
 	stdTypes |= docker.STDOUT
 	stdTypes |= docker.STDERR
@@ -49,7 +52,7 @@ func (w *LogWatcher) watchContainer(ctx context.Context, host string, id string)
 			fmt.Printf("event: container-stopped\ndata: end of stream")
 
 		} else {
-			fmt.Printf(err.Error())
+			fmt.Printf("watcher: %s", err.Error())
 		}
 	}
 

@@ -4,7 +4,7 @@ TAG := "$$(git describe --abbrev=0 --tags)"
 docker-build:
 	docker build --build-arg TAG=$(TAG) -t mehranzand/pulseup:$(TAG) -t mehranzand/pulseup:latest .
 
-.PHONY: run-dev
+.PHONY: dev
 dev:
 	cd web && yarn dev & air && fg
 
