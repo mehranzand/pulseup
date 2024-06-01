@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mehranzand/pulseup/internal/action"
 	"github.com/mehranzand/pulseup/internal/api"
 	"github.com/mehranzand/pulseup/internal/api/handler"
 	"github.com/mehranzand/pulseup/internal/docker"
@@ -72,10 +71,10 @@ func main() {
 		log.Infof("Successfully established connection to database")
 	}
 
-	watcher := action.NewLogWatcher(clients, db)
+	//watcher := action.NewLogWatcher(clients, db)
 
-	watcher.AddContainer("localhost", "7206f2955e3a")
-	watcher.AddContainer("localhost", "300d1decb6f3")
+	// watcher.AddContainer("localhost", "7206f2955e3a")
+	// watcher.AddContainer("localhost", "300d1decb6f3")
 
 	createServer(args, clients, db)
 }
