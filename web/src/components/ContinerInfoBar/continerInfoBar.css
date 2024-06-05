@@ -17,3 +17,10 @@
 .continer-tag{
     color: #fff;
 }
+
+.more-button {
+    background-color: transparent !important;
+    color: #fff !important;
+
+    margin-right: 1em;
+}

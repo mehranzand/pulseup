@@ -59,7 +59,7 @@ function LogViewer() {
       <Col span={4.5}>
         <Tag color='blue-inverse'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</Tag></Col>
       <Col span={18}>
-        <Text className='log-message' copyable><Ansi>{record.message}</Ansi></Text>
+        <Text className='log-message'><Ansi>{record.message}</Ansi></Text>
       </Col>
     </Row>
   };

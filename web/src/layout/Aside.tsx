@@ -31,6 +31,10 @@ function Aside() {
     <AntLayout.Sider
       width={255}
       className="aside"
+      breakpoint={"lg"}
+      theme="light"
+      collapsedWidth={0}
+      trigger={null}
     >
       {viewMode == "container" && <><Row>
         <Col span={24}>

@@ -107,6 +107,7 @@
   margin-bottom: 5px;
   color: #fff ;
   padding-left: 20px;
+  min-width: 600px;
 }
 
 .log-wrapper{
