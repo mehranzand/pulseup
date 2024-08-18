@@ -7,7 +7,7 @@ action logs for next-level performance and insight.
 - Insight Log
 - Action Log
 - Authentication
-- 
+  
 ## Getting Started
 Pull the latest release with:
 
