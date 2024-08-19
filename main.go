@@ -71,10 +71,9 @@ func main() {
 		log.Infof("Successfully established connection to database")
 	}
 
-	//watcher := action.NewLogWatcher(clients, db)
+	// watcher := monitoring.NewLogWatcher(clients, db)
 
-	// watcher.AddContainer("localhost", "7206f2955e3a")
-	// watcher.AddContainer("localhost", "300d1decb6f3")
+	// watcher.AddContainer("localhost", "da8a6d84b013")
 
 	createServer(args, clients, db)
 }
@@ -194,8 +193,11 @@ func dbInit() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&models.WatchedContainer{})
-	db.AutoMigrate(&models.LogAction{})
+	db.AutoMigrate(&models.MonitoredContainer{})
+	db.AutoMigrate(&models.Trigger{})
+	db.AutoMigrate(&models.Action{})
+	db.AutoMigrate(&models.TriggerResult{})
+	db.AutoMigrate(&models.TriggerLog{})
 
 	return db, nil
 }
