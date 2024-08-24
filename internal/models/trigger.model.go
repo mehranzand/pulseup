@@ -13,9 +13,8 @@ const (
 type Trigger struct {
 	gorm.Model
 	MonitoredContainerID uint            `json:"monitored_container_id" gorm:"not null"`
-	Type                 TriggerType     `json:"type"`
-	Key                  string          `json:"key" gorm:"null"`
-	Value                string          `json:"value" gorm:"not null"`
+	Type                 string          `json:"type"`
+	Criteria             string          `json:"criteria" gorm:"not null"`
 	Active               bool            `json:"active"`
 	Actions              []Action        `json:"actions" gorm:"foreignKey:TriggerID"`
 	Logs                 []TriggerLog    `json:"logs" gorm:"foreignKey:TriggerID"`

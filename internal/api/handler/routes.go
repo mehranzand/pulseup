@@ -8,10 +8,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (h *Handler) Register(v1 *echo.Group) {
-	v1.GET("/:host/containers", h.GetContainers)
-	v1.GET("/logs/stream/:host/:id", h.StreamLogs)
-	v1.GET("/events/stream/:host", h.StreamContainerEvents)
+func (h *Handler) Register(api *echo.Group) {
+	api.GET("/:host/containers", h.GetContainers)
+	api.GET("/logs/stream/:host/:id", h.StreamLogs)
+	api.GET("/events/stream/:host", h.StreamContainerEvents)
+
+	api.POST("/:host/monitoring", h.SaveTrigger)
+	api.DELETE("/:host/monitoring", h.DeleteTrigger)
+	api.PUT("/:host/monitoring", h.EditTrigger)
 }
 
 func (h *Handler) IndexHandler(c echo.Context) error {
