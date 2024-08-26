@@ -14,8 +14,7 @@ func (h *Handler) Register(api *echo.Group) {
 	api.GET("/events/stream/:host", h.StreamContainerEvents)
 
 	api.POST("/:host/monitoring", h.SaveTrigger)
-	api.DELETE("/:host/monitoring", h.DeleteTrigger)
-	api.PUT("/:host/monitoring", h.EditTrigger)
+	api.DELETE("/:host/monitoring/:id", h.DeleteTrigger)
 }
 
 func (h *Handler) IndexHandler(c echo.Context) error {

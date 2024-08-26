@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/mehranzand/pulseup/internal/api/middleware"
 	"github.com/mehranzand/pulseup/internal/models"
 )
 
-// AddTrigger
-// @Summary add new trigger
+// SaveTrigger
+// @Summary add or edit triggers
 func (h *Handler) SaveTrigger(c echo.Context) error {
-	//cc := c.(*middleware.DockerContext)
+	cc := c.(*middleware.DockerContext)
 	r := new(models.AddTriggerRequest)
 	if err := c.Bind(r); err != nil {
 		return err
@@ -26,14 +27,14 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 	}
 
 	var monitoredContainer models.MonitoredContainer
-	result := h.db.Preload("Triggers").First(&monitoredContainer, "container_id = ?", r.ContainerId)
+	result := h.db.Preload("Triggers").Find(&monitoredContainer, "container_id = ?", r.ContainerId)
 
 	if result.Error != nil {
-		return c.JSON(http.StatusOK, map[string]interface{}{"err": result.Error})
+		return c.JSON(http.StatusOK, map[string]interface{}{"err": result.Error.Error()})
 	}
 
 	if result.RowsAffected == 0 {
-		monitoredContainer := models.MonitoredContainer{ContainerId: r.ContainerId, Host: "localhost", Active: true}
+		monitoredContainer := models.MonitoredContainer{ContainerId: r.ContainerId, Host: cc.Client.Host().ID, Active: true}
 		h.db.Omit("Triggers").Create(&monitoredContainer)
 	} else if !monitoredContainer.Active {
 		h.db.Model(&monitoredContainer).Updates(map[string]interface{}{"active": 1, "updated_at": time.Now()})
@@ -71,12 +72,22 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 // DeleteTrigger
 // @Summary delete a trigger
 func (h *Handler) DeleteTrigger(c echo.Context) error {
-	return c.String(http.StatusOK, "Delete!\n")
-}
+	id := c.Param("id")
 
-// EditTrigger
-// @Summary edit a trigger
-func (h *Handler) EditTrigger(c echo.Context) error {
+	if len(id) == 0 {
+		return c.JSON(http.StatusUnprocessableEntity, map[string]interface{}{"message": "trigger id is required"})
+	}
 
-	return c.String(http.StatusOK, "Edit!\n")
+	trigger := models.Trigger{}
+	result := h.db.First(&trigger, id)
+	if result.Error != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"err": result.Error.Error()})
+	}
+
+	deleteResult := h.db.Delete(&trigger, id)
+	if deleteResult.Error != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"err": deleteResult.Error})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"message": "ok"})
 }
