@@ -1,15 +1,15 @@
-package action
+package monitoring
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"strconv"
 	"time"
 
-	"github.com/labstack/gommon/log"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/mehranzand/pulseup/internal/docker"
+	"github.com/mehranzand/pulseup/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -29,10 +29,10 @@ func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 	return logWatcher
 }
 
-func (w *LogWatcher) AddContainer(host string, id string) {
+func (w *LogWatcher) AddContainer(ctr models.MonitoredContainer) {
 	ctx, cancel := context.WithCancel(context.Background())
-	go w.addContainer(ctx, host, id)
-	w.observatory[id] = cancel
+	go w.addContainer(ctx, ctr)
+	w.observatory[ctr.ContainerId] = cancel
 }
 
 func (w *LogWatcher) RemoveContainer(host string, id string) {
@@ -40,33 +40,38 @@ func (w *LogWatcher) RemoveContainer(host string, id string) {
 	delete(w.observatory, id)
 }
 
-func (w *LogWatcher) addContainer(ctx context.Context, host string, id string) {
+func (w *LogWatcher) addContainer(ctx context.Context, ctr models.MonitoredContainer) {
 	var stdTypes docker.StdType
 	stdTypes |= docker.STDOUT
 	stdTypes |= docker.STDERR
-	since := time.Now().AddDate(0, 0, -10)
-	reader, err := w.Clients[host].ContainerLogs(ctx, id, strconv.FormatInt(since.Unix(), 10), stdTypes)
+	since := time.Now().AddDate(0, 0, -1)
+	reader, err := w.Clients[ctr.Host].ContainerLogs(ctx, ctr.ContainerId, strconv.FormatInt(since.Unix(), 10), stdTypes)
 
 	if err != nil {
 		if err == io.EOF {
-			fmt.Printf("event: container-stopped\ndata: end of stream")
+			log.Debugf("watcher: container %s was stopped", ctr.ContainerId)
 
 		} else {
-			fmt.Printf("watcher: %s", err.Error())
+			log.Debugf("watcher: container %s error %s", ctr.ContainerId, err.Error())
 		}
 	}
 
 	lr := docker.NewLogReader(reader, false)
-	for {
-		select {
-		case event := <-lr.Events:
-			if buffer, err := json.Marshal(event); err != nil {
-				log.Errorf("json encoding error while streaming %v", err.Error())
-			} else {
-				fmt.Printf("%s\n", buffer)
+
+	select {
+	case err := <-lr.Errors:
+		if err != nil {
+			if err == io.EOF {
+				log.Debugf("container stopped: %v", ctr.ContainerId)
+
+			} else if err != context.Canceled {
+				log.Errorf("unknown error while watching %v", err.Error())
 			}
-		case <-ctx.Done():
-			return
 		}
+	default:
 	}
+
+	NewInspector(lr.Events, ctx, w.db, ctr.Triggers)
+
+	//TODO: Handle inpector errors
 }

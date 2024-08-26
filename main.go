@@ -11,6 +11,7 @@ import (
 	"github.com/mehranzand/pulseup/internal/api/handler"
 	"github.com/mehranzand/pulseup/internal/docker"
 	"github.com/mehranzand/pulseup/internal/models"
+	"github.com/mehranzand/pulseup/internal/monitoring"
 
 	"github.com/alexflint/go-arg"
 	"github.com/joho/godotenv"
@@ -71,10 +72,7 @@ func main() {
 		log.Infof("Successfully established connection to database")
 	}
 
-	// watcher := monitoring.NewLogWatcher(clients, db)
-
-	// watcher.AddContainer("localhost", "da8a6d84b013")
-
+	createWatcher(clients, db)
 	createServer(args, clients, db)
 }
 
@@ -200,4 +198,25 @@ func dbInit() (*gorm.DB, error) {
 	db.AutoMigrate(&models.TriggerLog{})
 
 	return db, nil
+}
+
+func createWatcher(clients map[string]docker.Client, db *gorm.DB) {
+	var activeContainers []models.MonitoredContainer
+	result := db.Preload("Triggers", "active = ?", true).Find(&activeContainers, "active = ?", true)
+
+	if result.Error != nil {
+		log.Errorf("Fetching monitored containers failed: %s", result.Error.Error())
+	}
+
+	if result.RowsAffected > 0 {
+		watcher := monitoring.NewLogWatcher(clients, db)
+
+		for _, container := range activeContainers {
+			if len(container.Triggers) > 0 {
+				log.Debugf("📺 Container %s is being watched", container.ContainerId)
+
+				watcher.AddContainer(container)
+			}
+		}
+	}
 }
