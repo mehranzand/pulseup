@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"runtime"
 	"strings"
@@ -150,12 +151,13 @@ func (e *LogReader) readLog(reader *bufio.Reader, tty bool) error {
 		if false {
 			printMemUsage()
 		}
-
 	}
 }
 
 func (e *LogReader) parseAndPushEvent(message string, stdType StdType) {
-	logEvent := &LogEvent{Message: message, StdType: stdType.String()}
+	hash := fnv.New32a()
+	hash.Write([]byte(message))
+	logEvent := &LogEvent{Id: hash.Sum32(), Message: message, StdType: stdType.String()}
 
 	if index := strings.IndexAny(message, " "); index != -1 {
 		stamp := message[:index]
@@ -165,6 +167,8 @@ func (e *LogReader) parseAndPushEvent(message string, stdType StdType) {
 			logEvent.Timestamp = timestamp.UnixMilli()
 		}
 	}
+
+	logEvent.Level = detectLogLevel(message)
 
 	e.buffer <- logEvent
 }

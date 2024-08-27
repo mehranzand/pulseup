@@ -14,17 +14,21 @@ import (
 )
 
 type LogWatcher struct {
-	Clients     map[string]docker.Client
-	observatory map[string]interface{}
-	db          *gorm.DB
+	clients map[string]docker.Client
+	pool    *Observable
+	db      *gorm.DB
 }
 
 func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 	logWatcher := &LogWatcher{
-		Clients:     clients,
-		observatory: make(map[string]interface{}),
-		db:          db,
+		clients: clients,
+		db:      db,
+		pool:    NewObservable(),
 	}
+
+	logWatcher.pool.RegisterListener(func() {
+		log.Println("Map has changed!")
+	})
 
 	return logWatcher
 }
@@ -32,12 +36,14 @@ func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 func (w *LogWatcher) AddContainer(ctr models.MonitoredContainer) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go w.addContainer(ctx, ctr)
-	w.observatory[ctr.ContainerId] = cancel
+	w.pool.Add(ctr.ContainerId, cancel)
 }
 
 func (w *LogWatcher) RemoveContainer(host string, id string) {
-	w.observatory[id].(context.CancelFunc)()
-	delete(w.observatory, id)
+	if value, exists := w.pool.Get(id); exists {
+		value.(context.CancelFunc)()
+		w.pool.Remove(id)
+	}
 }
 
 func (w *LogWatcher) addContainer(ctx context.Context, ctr models.MonitoredContainer) {
@@ -45,7 +51,7 @@ func (w *LogWatcher) addContainer(ctx context.Context, ctr models.MonitoredConta
 	stdTypes |= docker.STDOUT
 	stdTypes |= docker.STDERR
 	since := time.Now().AddDate(0, 0, -1)
-	reader, err := w.Clients[ctr.Host].ContainerLogs(ctx, ctr.ContainerId, strconv.FormatInt(since.Unix(), 10), stdTypes)
+	reader, err := w.clients[ctr.Host].ContainerLogs(ctx, ctr.ContainerId, strconv.FormatInt(since.Unix(), 10), stdTypes)
 
 	if err != nil {
 		if err == io.EOF {

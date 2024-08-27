@@ -39,6 +39,7 @@ func (i *Inspector) startListening() {
 				log.Errorf("json encoding error while watching %v", err.Error())
 			} else {
 				i.matchCriteria(buffer)
+
 			}
 		case <-i.ctx.Done():
 			return
@@ -51,6 +52,7 @@ func (i *Inspector) matchCriteria(buffer []byte) {
 		result, _ := regexp.Match(trigger.Criteria, buffer)
 
 		if result {
+			log.Println(string(buffer))
 			log.Infof("Result is: %s for triggerId => %b", trigger.Criteria, trigger.ID)
 		}
 	}

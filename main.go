@@ -72,8 +72,9 @@ func main() {
 		log.Infof("Successfully established connection to database")
 	}
 
-	createWatcher(clients, db)
-	createServer(args, clients, db)
+	w := createWatcher(clients, db)
+
+	createServer(args, clients, db, w)
 }
 
 func createDockerClients(hostname string, args args) map[string]docker.Client {
@@ -131,7 +132,7 @@ func createDockerClients(hostname string, args args) map[string]docker.Client {
 	return clients
 }
 
-func createServer(args args, clients map[string]docker.Client, db *gorm.DB) {
+func createServer(args args, clients map[string]docker.Client, db *gorm.DB, watcher *monitoring.LogWatcher) {
 	config := handler.Config{
 		Adderss:      args.Adderss,
 		Base:         args.Base,
@@ -145,7 +146,7 @@ func createServer(args args, clients map[string]docker.Client, db *gorm.DB) {
 		log.Fatalf("Could not open web content at dist folder: %v", err)
 	}
 
-	api.CreateServer(clients, &config, assets, db)
+	api.CreateServer(clients, &config, assets, db, watcher)
 }
 
 func parseArgs() args {
@@ -200,7 +201,7 @@ func dbInit() (*gorm.DB, error) {
 	return db, nil
 }
 
-func createWatcher(clients map[string]docker.Client, db *gorm.DB) {
+func createWatcher(clients map[string]docker.Client, db *gorm.DB) *monitoring.LogWatcher {
 	var activeContainers []models.MonitoredContainer
 	result := db.Preload("Triggers", "active = ?", true).Find(&activeContainers, "active = ?", true)
 
@@ -208,9 +209,9 @@ func createWatcher(clients map[string]docker.Client, db *gorm.DB) {
 		log.Errorf("Fetching monitored containers failed: %s", result.Error.Error())
 	}
 
-	if result.RowsAffected > 0 {
-		watcher := monitoring.NewLogWatcher(clients, db)
+	watcher := monitoring.NewLogWatcher(clients, db)
 
+	if result.RowsAffected > 0 {
 		for _, container := range activeContainers {
 			if len(container.Triggers) > 0 {
 				log.Debugf("📺 Container %s is being watched", container.ContainerId)
@@ -219,4 +220,6 @@ func createWatcher(clients map[string]docker.Client, db *gorm.DB) {
 			}
 		}
 	}
+
+	return watcher
 }
