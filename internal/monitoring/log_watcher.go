@@ -26,16 +26,19 @@ func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 		pool:    NewObservable(),
 	}
 
-	logWatcher.pool.RegisterListener(func() {
-		log.Println("Map has changed!")
+	logWatcher.pool.RegisterListener(func(key string, value interface{}, action string) {
 	})
 
 	return logWatcher
 }
 
 func (w *LogWatcher) AddContainer(ctr models.MonitoredContainer) {
+	if value, exists := w.pool.Get(ctr.ContainerId); exists {
+		value.(context.CancelFunc)()
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	go w.addContainer(ctx, ctr)
+	go w.watch(ctx, ctr)
 	w.pool.Add(ctr.ContainerId, cancel)
 }
 
@@ -46,11 +49,11 @@ func (w *LogWatcher) RemoveContainer(host string, id string) {
 	}
 }
 
-func (w *LogWatcher) addContainer(ctx context.Context, ctr models.MonitoredContainer) {
+func (w *LogWatcher) watch(ctx context.Context, ctr models.MonitoredContainer) {
 	var stdTypes docker.StdType
 	stdTypes |= docker.STDOUT
 	stdTypes |= docker.STDERR
-	since := time.Now().AddDate(0, 0, -1)
+	since := time.Now()
 	reader, err := w.clients[ctr.Host].ContainerLogs(ctx, ctr.ContainerId, strconv.FormatInt(since.Unix(), 10), stdTypes)
 
 	if err != nil {
