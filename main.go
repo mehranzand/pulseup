@@ -216,7 +216,7 @@ func createWatcher(clients map[string]docker.Client, db *gorm.DB) *monitoring.Lo
 			if len(container.Triggers) > 0 {
 				log.Debugf("📺 Container %s is being watched", container.ContainerId)
 
-				watcher.AddContainer(container)
+				watcher.WatchContainer(container)
 			}
 		}
 	}

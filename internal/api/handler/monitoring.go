@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -41,10 +42,22 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 	}
 
 	for _, trigger := range r.Triggers {
+		var duplicate *models.Trigger
+		for _, t := range monitoredContainer.Triggers {
+			if t.Type == trigger.Type && t.Criteria == trigger.Criteria {
+				duplicate = &t
+				break
+			}
+		}
+
+		if duplicate != nil {
+			continue
+		}
+
 		if trigger.Id != 0 {
 			var triggerToUpdate *models.Trigger
 			for _, t := range monitoredContainer.Triggers {
-				if t.ID == trigger.Id {
+				if t.ID == trigger.Id && t.Type == trigger.Type && t.Criteria != trigger.Criteria {
 					triggerToUpdate = &t
 					break
 				}
@@ -67,6 +80,8 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 		}
 	}
 
+	h.watcher.WatchContainer(monitoredContainer)
+
 	return c.JSON(http.StatusOK, map[string]interface{}{"message": "ok"})
 }
 
@@ -85,10 +100,18 @@ func (h *Handler) DeleteTrigger(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"err": result.Error.Error()})
 	}
 
+	monitoredContainer := models.MonitoredContainer{}
+	result = h.db.First(&monitoredContainer, trigger.MonitoredContainerID)
+	if result.Error != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"err": result.Error.Error()})
+	}
+
 	deleteResult := h.db.Delete(&trigger, id)
 	if deleteResult.Error != nil {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"err": deleteResult.Error})
+	} else {
+		i, _ := strconv.Atoi(id)
+		h.watcher.RemoveTrigger(monitoredContainer.ContainerId, uint(i))
+		return c.JSON(http.StatusOK, map[string]interface{}{"message": "ok"})
 	}
-
-	return c.JSON(http.StatusOK, map[string]interface{}{"message": "ok"})
 }

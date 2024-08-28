@@ -14,41 +14,67 @@ import (
 )
 
 type LogWatcher struct {
-	clients map[string]docker.Client
-	pool    *Observable
-	db      *gorm.DB
+	clients     map[string]docker.Client
+	objectPool  *Observable
+	contextPool *Observable
+	db          *gorm.DB
 }
 
 func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 	logWatcher := &LogWatcher{
-		clients: clients,
-		db:      db,
-		pool:    NewObservable(),
+		clients:     clients,
+		db:          db,
+		objectPool:  NewObservable(),
+		contextPool: NewObservable(),
 	}
 
-	logWatcher.pool.RegisterListener(func(key string, value interface{}, action string) {
+	logWatcher.objectPool.RegisterListener(func(key string, value interface{}, action string) {
+		if action == "save" {
+			if ctx, exists := logWatcher.contextPool.Get(key); exists {
+				ctx.(context.CancelFunc)()
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			go logWatcher.watch(ctx, value.(models.MonitoredContainer))
+			logWatcher.contextPool.Add(key, cancel)
+		} else if action == "remove" {
+			if value, exists := logWatcher.contextPool.Get(key); exists {
+				value.(context.CancelFunc)()
+				logWatcher.contextPool.Remove(key)
+			}
+		}
 	})
 
 	return logWatcher
 }
 
-func (w *LogWatcher) AddContainer(ctr models.MonitoredContainer) {
-	if value, exists := w.pool.Get(ctr.ContainerId); exists {
-		value.(context.CancelFunc)()
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	go w.watch(ctx, ctr)
-	w.pool.Add(ctr.ContainerId, cancel)
+func (w *LogWatcher) WatchContainer(ctr models.MonitoredContainer) {
+	w.objectPool.Add(ctr.ContainerId, ctr)
 }
 
-func (w *LogWatcher) RemoveContainer(host string, id string) {
-	if value, exists := w.pool.Get(id); exists {
-		value.(context.CancelFunc)()
-		w.pool.Remove(id)
+func (w *LogWatcher) RemoveTrigger(cid string, tid uint) {
+	if value, exists := w.objectPool.Get(cid); exists {
+		var monitoredContainer = value.(models.MonitoredContainer)
+		var index int
+		for i, t := range monitoredContainer.Triggers {
+			if t.ID == tid {
+				index = i
+				break
+			}
+		}
+
+		triggers := monitoredContainer.Triggers
+		triggers = append(triggers[:index], triggers[index+1:]...)
+		monitoredContainer.Triggers = triggers
+
+		if len(monitoredContainer.Triggers) == 0 {
+			w.objectPool.Remove(cid)
+		} else {
+
+			w.WatchContainer(monitoredContainer)
+		}
 	}
 }
-
 func (w *LogWatcher) watch(ctx context.Context, ctr models.MonitoredContainer) {
 	var stdTypes docker.StdType
 	stdTypes |= docker.STDOUT
@@ -81,6 +107,5 @@ func (w *LogWatcher) watch(ctx context.Context, ctr models.MonitoredContainer) {
 	}
 
 	NewInspector(lr.Events, ctx, w.db, ctr.Triggers)
-
 	//TODO: Handle inpector errors
 }
