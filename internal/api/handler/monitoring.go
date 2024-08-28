@@ -34,8 +34,8 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 	}
 
 	if result.RowsAffected == 0 {
-		monitoredContainer := models.MonitoredContainer{ContainerId: r.ContainerId, Host: cc.Client.Host().ID, Active: true}
-		h.db.Omit("Triggers").Create(&monitoredContainer)
+		monitoredContainer = models.MonitoredContainer{ContainerId: r.ContainerId, Host: cc.Client.Host().ID, Active: true}
+		h.db.Create(&monitoredContainer)
 	} else if !monitoredContainer.Active {
 		h.db.Model(&monitoredContainer).Updates(map[string]interface{}{"active": 1, "updated_at": time.Now()})
 	}
@@ -62,7 +62,8 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 			}
 
 		} else {
-			h.db.Model(&monitoredContainer).Association("Triggers").Append(&models.Trigger{Type: trigger.Type, Criteria: trigger.Criteria, Active: trigger.Active})
+			trigger := models.Trigger{Type: trigger.Type, Criteria: trigger.Criteria, Active: trigger.Active}
+			h.db.Model(&monitoredContainer).Association("Triggers").Append(&trigger)
 		}
 	}
 
