@@ -80,7 +80,7 @@ func (h *Handler) SaveTrigger(c echo.Context) error {
 		}
 	}
 
-	h.watcher.WatchContainer(monitoredContainer)
+	h.watcher.TrackContainer(monitoredContainer)
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"message": "ok"})
 }

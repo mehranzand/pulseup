@@ -52,8 +52,7 @@ func (i *Inspector) matchCriteria(buffer []byte) {
 		result, _ := regexp.Match(trigger.Criteria, buffer)
 
 		if result {
-			log.Println(string(buffer))
-			log.Infof("Result is: %s for triggerId => %b", trigger.Criteria, trigger.ID)
+			log.Infof("Result is: %s for triggerId => %d", trigger.Criteria, trigger.ID)
 		}
 	}
 }

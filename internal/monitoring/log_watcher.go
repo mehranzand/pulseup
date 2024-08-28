@@ -48,7 +48,7 @@ func NewLogWatcher(clients map[string]docker.Client, db *gorm.DB) *LogWatcher {
 	return logWatcher
 }
 
-func (w *LogWatcher) WatchContainer(ctr models.MonitoredContainer) {
+func (w *LogWatcher) TrackContainer(ctr models.MonitoredContainer) {
 	w.objectPool.Add(ctr.ContainerId, ctr)
 }
 
@@ -71,7 +71,7 @@ func (w *LogWatcher) RemoveTrigger(cid string, tid uint) {
 			w.objectPool.Remove(cid)
 		} else {
 
-			w.WatchContainer(monitoredContainer)
+			w.TrackContainer(monitoredContainer)
 		}
 	}
 }
