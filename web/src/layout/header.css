@@ -1,0 +1,13 @@
+.header{
+    background-color: #099cec;
+    color: #fff;
+    font-size: 23px;
+    line-height:35px;
+    height: 40px;
+    font-family:monospace;
+    font-weight: 700;
+    position: sticky;
+    width: 100%;
+    z-index: 1;
+    top: 0;
+}
