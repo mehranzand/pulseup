@@ -10,7 +10,11 @@ import './aside.css';
 
 const { Title } = Typography
 
-function Aside() {
+interface AsideProps {
+  collapsed: boolean
+}
+
+function Aside(props: AsideProps) {
   let [viewMode, setViewMode] = useState<"host" | "container">("container")
   const { current } = useAppSelector((state) => state.host)
   const dispatch = useAppDispatch()
@@ -23,7 +27,6 @@ function Aside() {
 
   const handleSelectHostCallback = (host: string) => {
     setViewMode("container")
-
     dispatch(setCurrent(host))
   }
 
@@ -31,8 +34,14 @@ function Aside() {
     <AntLayout.Sider
       width={255}
       className="aside"
+      theme="light"
+      trigger={null}
+      collapsible
+      collapsedWidth={0}
+      collapsed={props.collapsed}
     >
-      {viewMode == "container" && <><Row>
+      {viewMode == "container" && <>
+      <Row>
         <Col span={24}>
           <Space align="baseline">
             <Tooltip title={current} >
@@ -44,7 +53,7 @@ function Aside() {
           </Space>
         </Col>
       </Row>
-        <ContainerList></ContainerList></>}
+      <ContainerList></ContainerList></>}
       {viewMode == "host" && <HostList hosts={config.hosts} onSelect={handleSelectHostCallback}></HostList>} 
     </AntLayout.Sider>
   );

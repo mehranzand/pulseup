@@ -112,7 +112,6 @@ outerloop:
 			fmt.Fprintln(c.Response().Writer, "ping:")
 			f.Flush()
 		}
-
 	}
 
 	select {

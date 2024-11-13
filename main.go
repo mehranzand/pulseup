@@ -10,10 +10,15 @@ import (
 	"github.com/mehranzand/pulseup/internal/api"
 	"github.com/mehranzand/pulseup/internal/api/handler"
 	"github.com/mehranzand/pulseup/internal/docker"
+	"github.com/mehranzand/pulseup/internal/models"
+	"github.com/mehranzand/pulseup/internal/monitoring"
 
 	"github.com/alexflint/go-arg"
 	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 var (
@@ -54,14 +59,22 @@ func main() {
 	log.Infof("💡 pulseUp version %s", version)
 
 	clients := createDockerClients(args.Hostname, args)
-
 	if len(clients) == 0 {
 		log.Fatal("Could not connect to any Dockerd")
 	} else {
 		log.Infof("Totaly connected to %d Dockerd(s)", len(clients))
 	}
 
-	createServer(args, clients)
+	db, err := dbInit()
+	if err != nil {
+		log.Fatalf("Failed to connect internal database %s", err)
+	} else {
+		log.Infof("Successfully established connection to database")
+	}
+
+	w := createWatcher(clients, db)
+
+	createServer(args, clients, db, w)
 }
 
 func createDockerClients(hostname string, args args) map[string]docker.Client {
@@ -119,7 +132,7 @@ func createDockerClients(hostname string, args args) map[string]docker.Client {
 	return clients
 }
 
-func createServer(args args, clients map[string]docker.Client) {
+func createServer(args args, clients map[string]docker.Client, db *gorm.DB, watcher *monitoring.LogWatcher) {
 	config := handler.Config{
 		Adderss:      args.Adderss,
 		Base:         args.Base,
@@ -133,7 +146,7 @@ func createServer(args args, clients map[string]docker.Client) {
 		log.Fatalf("Could not open web content at dist folder: %v", err)
 	}
 
-	api.CreateServer(clients, &config, assets)
+	api.CreateServer(clients, &config, assets, db, watcher)
 }
 
 func parseArgs() args {
@@ -170,4 +183,43 @@ func configureLogger(level string) {
 		DisableColors: false,
 		FullTimestamp: false,
 	})
+}
+
+func dbInit() (*gorm.DB, error) {
+	target := "pulseup.db"
+	db, err := gorm.Open(sqlite.Open(target), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	db.AutoMigrate(&models.MonitoredContainer{})
+	db.AutoMigrate(&models.Trigger{})
+	db.AutoMigrate(&models.Action{})
+	db.AutoMigrate(&models.TriggerResult{})
+	db.AutoMigrate(&models.TriggerLog{})
+
+	return db, nil
+}
+
+func createWatcher(clients map[string]docker.Client, db *gorm.DB) *monitoring.LogWatcher {
+	var activeContainers []models.MonitoredContainer
+	result := db.Preload("Triggers", "active = ?", true).Find(&activeContainers, "active = ?", true)
+
+	if result.Error != nil {
+		log.Errorf("Fetching monitored containers failed: %s", result.Error.Error())
+	}
+
+	watcher := monitoring.NewLogWatcher(clients, db)
+
+	if result.RowsAffected > 0 {
+		for _, container := range activeContainers {
+			if len(container.Triggers) > 0 {
+				log.Debugf("📺 Container %s is being watched", container.ContainerId)
+
+				watcher.TrackContainer(container)
+			}
+		}
+	}
+
+	return watcher
 }

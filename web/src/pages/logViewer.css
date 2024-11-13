@@ -25,10 +25,9 @@
 .scroll-down {
   cursor: pointer;
   background-color: #099cec;
-  position: absolute;
-  bottom: 2rem;
-  right: 2rem;
-  margin-left: -16px;
+  position: fixed;
+  bottom: 1rem;
+  right: 1.5rem;
   display: block;
   width: 40px;
   height: 40px;
@@ -38,7 +37,7 @@
   z-index: 2;
   opacity: 1;
   -webkit-transition: all .5s ease-in 1s;
-  transition: all .5s ease-in 1s;
+  transition: all .5s ease-in-out;
 }
 
 .scroll-down.bounce{
@@ -51,7 +50,7 @@
 
 .scroll-down:before {
   position: absolute;
-  top: calc(50% - 7px);
+  top: calc(50% - 9px);
   left: calc(50% - 7px);
   transform: rotate(-45deg);
   display: block;
@@ -99,7 +98,7 @@
   color: #e5e7eb;
   white-space: nowrap;
   word-break: break-word;
-  font-family:'monospace'
+  font-family:'monospace';
 }
 
 .log-row{
@@ -107,6 +106,7 @@
   margin-bottom: 5px;
   color: #fff ;
   padding-left: 20px;
+  min-width: 600px;
 }
 
 .log-wrapper{

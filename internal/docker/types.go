@@ -23,6 +23,7 @@ type ContainerEvent struct {
 }
 
 type LogEvent struct {
+	Id        uint32   `json:"id,omitempty"`
 	Message   any      `json:"m,omitempty"`
 	Timestamp int64    `json:"ts"`
 	StdType   string   `json:"t,omitempty"`

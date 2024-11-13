@@ -2,7 +2,7 @@ import { useParams, useLocation} from 'react-router-dom';
 import ContinerInfoBar from '../components/ContinerInfoBar';
 import DotsLoader from '../components/DotsLoader';
 import useLogSourceEvent from '../lib/hooks/useLogSourceEvent';
-import { Row, Col, Tag, Tooltip, Typography } from 'antd'
+import { Row, Col, Tag, Tooltip, Typography, Space, message, Affix } from 'antd'
 import { useEffect, useState, CSSProperties, createRef, forwardRef } from 'react'
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -36,6 +36,17 @@ function LogViewer() {
     }
   }, [messages])
 
+  const handleCopy = (text: string | undefined) => {
+    if(text === undefined)
+    {
+      return;
+    }
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        message.success("Copied to clipboard!")
+      })
+  };
+
   const LogRow = ({ index, style }: { index: number; style: CSSProperties; }) => {
     const record = messages[index]
 
@@ -51,15 +62,16 @@ function LogViewer() {
         ...style,
         bottom: `${parseFloat(Number(style.bottom).toString()) + PADDING_SIZE}px`
       }}>
-      <Col span={1.5}>
-        <Tooltip title={record.type} placement='top'>
-          <span className={`type-dot ${record.type}`}></span>
-        </Tooltip>
-      </Col>
-      <Col span={4.5}>
-        <Tag color='blue-inverse'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</Tag></Col>
-      <Col span={18}>
-        <Text className='log-message' copyable><Ansi>{record.message}</Ansi></Text>
+      <Col span={24}>
+        <Space>
+          <Tooltip title={record.type} placement='top'>
+            <span className={`type-dot ${record.type}`}></span>
+          </Tooltip>
+          <Tag color='blue-inverse'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</Tag>
+          <Text className='log-message' copyable={{ text: record.message, onCopy: () => handleCopy(record.message) }}>
+            <Ansi >{record.message}</Ansi>
+          </Text>
+        </Space>
       </Col>
     </Row>
   };
@@ -79,7 +91,10 @@ function LogViewer() {
 
   return (
     <>
-      {!loading && <ContinerInfoBar continerId={params.id} ></ContinerInfoBar>}
+      {!loading && 
+       <Affix offsetTop={40}>
+        <ContinerInfoBar continerId={params.id} ></ContinerInfoBar>
+      </Affix>}
       <AutoSizer>
         {({ height, width }) => (
           <List

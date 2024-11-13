@@ -16,8 +16,14 @@ RUN yarn build
 FROM golang:1.22.2-alpine AS builder
 
 RUN mkdir /pulseup
-
 WORKDIR /pulseup
+
+# Important: required for go-sqlite3
+ENV CGO_ENABLED=1
+RUN apk add --no-cache \
+    gcc \
+    # Required for Alpine
+    musl-dev
 
 # Copy go mod files
 COPY go.* ./
@@ -34,13 +40,16 @@ COPY .env ./
 # Args
 ARG TAG=head
 ARG TARGETOS TARGETARCH
+ENV TARGETOS=linux
+ENV TARGETARCH=amd64
 
 # Build binary
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-s -w -X main.version=$TAG" -o pulseup
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags "-s -w -X main.version=$TAG -extldflags '-static'" -o pulseup
 
 FROM scratch
 
-COPY --from=builder /pulseup ./
+COPY --from=builder /pulseup/.env ./
+COPY --from=builder /pulseup/pulseup ./
 
 EXPOSE 7070
 

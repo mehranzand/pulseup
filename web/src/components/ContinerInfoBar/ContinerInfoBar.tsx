@@ -33,9 +33,9 @@ function ContinerInfoBar(props: ContinerInfoBarProps) {
           <span className='container-name' >
             {container?.name}
           </span>
-          <Text className='continer-tag' keyboard>{container?.image}</Text>
-          <Text className='continer-tag' keyboard>{container?.status}</Text>
-          <Tag color={tagColor(container)}>{container?.state}</Tag>
+          <Text className='container-tag' keyboard>{container?.image}</Text>
+          <Text className='container-tag' keyboard>{container?.status}</Text>
+          <Tag className='state' color={tagColor(container)}>{container?.state}</Tag>
         </Space>}
       </Col>
     </Row>

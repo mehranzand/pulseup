@@ -8,6 +8,8 @@ import (
 	"log"
 
 	"github.com/mehranzand/pulseup/internal/docker"
+	"github.com/mehranzand/pulseup/internal/monitoring"
+	"gorm.io/gorm"
 )
 
 type AuthProvider string
@@ -29,9 +31,11 @@ type Handler struct {
 	config    *Config
 	indexTmpl *template.Template
 	clients   map[string]docker.Client
+	db        *gorm.DB
+	watcher   *monitoring.LogWatcher
 }
 
-func NewHandler(config *Config, clients map[string]docker.Client, assets fs.FS) *Handler {
+func NewHandler(config *Config, clients map[string]docker.Client, assets fs.FS, db *gorm.DB, w *monitoring.LogWatcher) *Handler {
 	file, err := assets.Open("index.html")
 	if err != nil {
 		log.Fatal(err)
@@ -56,5 +60,7 @@ func NewHandler(config *Config, clients map[string]docker.Client, assets fs.FS) 
 		config:    config,
 		indexTmpl: tmpl,
 		clients:   clients,
+		db:        db,
+		watcher:   w,
 	}
 }

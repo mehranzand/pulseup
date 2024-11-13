@@ -1,0 +1,14 @@
+.header{
+    background-color: #099cec;
+    height: 40px;
+    width: 100%;
+    padding: 0 0 0 3em;
+    font-size: 23px;
+    color: #fff;
+    line-height: 35px !important;
+}
+
+.logo-type{
+    font-family:monospace;
+    font-weight: 700;
+}
