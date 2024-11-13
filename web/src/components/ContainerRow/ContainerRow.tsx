@@ -21,9 +21,9 @@ function ContainerRow(props: ContainerRowProps) {
     <>
       <Row className='continer-row'>
         <Col>
-          <Space className='continer-name'>
+          <Space >
             {badge()}
-            <span style={{color: props.continer.state == 'exited'? 'gray' : 'white'}}>{props.continer.name}</span>
+            <div className='continer-name' style={{color: props.continer.state == 'exited'? 'gray' : 'white'}}>{props.continer.name}</div>
           </Space>
         </Col>
       </Row>
