@@ -2,7 +2,7 @@ import { useParams, useLocation} from 'react-router-dom';
 import ContinerInfoBar from '../components/ContinerInfoBar';
 import DotsLoader from '../components/DotsLoader';
 import useLogSourceEvent from '../lib/hooks/useLogSourceEvent';
-import { Row, Col, Tag, Tooltip, Typography, Space, message, Affix } from 'antd'
+import { Row, Col, Tag, Tooltip, Typography, Space, Affix } from 'antd'
 import { useEffect, useState, CSSProperties, createRef, forwardRef } from 'react'
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -36,17 +36,6 @@ function LogViewer() {
     }
   }, [messages])
 
-  const handleCopy = (text: string | undefined) => {
-    if(text === undefined)
-    {
-      return;
-    }
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        message.success("Copied to clipboard!")
-      })
-  };
-
   const LogRow = ({ index, style }: { index: number; style: CSSProperties; }) => {
     const record = messages[index]
 
@@ -68,8 +57,8 @@ function LogViewer() {
             <span className={`type-dot ${record.type}`}></span>
           </Tooltip>
           <Tag color='blue-inverse'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</Tag>
-          <Text className='log-message' copyable={{ text: record.message, onCopy: () => handleCopy(record.message) }}>
-            <Ansi >{record.message}</Ansi>
+          <Text className='log-message' copyable={{ text: record.message }}>
+            <Ansi>{record.message}</Ansi>
           </Text>
         </Space>
       </Col>
