@@ -26,8 +26,8 @@
   cursor: pointer;
   background-color: #099cec;
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 1rem;
+  right: 1.5rem;
   display: block;
   width: 40px;
   height: 40px;
@@ -99,7 +99,6 @@
   white-space: nowrap;
   word-break: break-word;
   font-family:'monospace';
-  
 }
 
 .log-row{

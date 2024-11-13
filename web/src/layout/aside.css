@@ -17,7 +17,10 @@
     background-color: #099cec !important;
 }
 
-.aside{
+.aside {
     background-color: #141b1f !important;
     min-height: calc(100vh - 40px);
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }

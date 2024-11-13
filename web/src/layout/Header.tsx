@@ -7,7 +7,7 @@ function Header() {
     <AntLayout.Header className="header" >
       <Space>
         <DockerOutlined />
-        <span>pulseUp</span>
+        <span className="logo-type">pulseUp</span>
       </Space>
     </AntLayout.Header>
   );

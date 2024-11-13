@@ -1,9 +1,6 @@
 .container-bar {
-    position: sticky;
     height: 50px;
     padding: 10px 0 20px 20px;
-    top: 0;
-    z-index: 1;
     background-color: #192025;
 }
 
@@ -14,13 +11,12 @@
     font-family: monospace;
 }
 
-.continer-tag{
+.container-tag{
     color: #fff;
 }
 
-.more-button {
-    background-color: transparent !important;
-    color: #fff !important;
-
-    margin-right: 1em;
+@media (max-width: 768px) {
+    .container-tag {
+      display: none;
+    }
 }

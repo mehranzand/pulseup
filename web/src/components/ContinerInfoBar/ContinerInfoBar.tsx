@@ -1,6 +1,5 @@
 
-import { Row, Col, Typography, Space, Tag, Button } from 'antd'
-import { MoreOutlined} from '@ant-design/icons';
+import { Row, Col, Typography, Space, Tag } from 'antd'
 import { useAppSelector } from "../../hooks"
 import { Container } from '../../types/Container';
 import './continerInfoBar.css'
@@ -29,19 +28,15 @@ function ContinerInfoBar(props: ContinerInfoBarProps) {
 
   return (
     <Row className='container-bar' align='middle'>
-      <Col span={18}>
+      <Col>
         {container && <Space align='baseline'>
           <span className='container-name' >
             {container?.name}
           </span>
-          <Text className='continer-tag' keyboard>{container?.image}</Text>
-          <Text className='continer-tag' keyboard>{container?.status}</Text>
-          <Tag color={tagColor(container)}>{container?.state}</Tag>
-
+          <Text className='container-tag' keyboard>{container?.image}</Text>
+          <Text className='container-tag' keyboard>{container?.status}</Text>
+          <Tag className='state' color={tagColor(container)}>{container?.state}</Tag>
         </Space>}
-      </Col>
-      <Col span={2} offset={4} style={{textAlign:"right"}}>
-      <Button  type="primary" size="small" className='more-button'><MoreOutlined style={{fontSize:20}}/></Button>
       </Col>
     </Row>
   )

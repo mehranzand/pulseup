@@ -2,7 +2,7 @@ import { useParams, useLocation} from 'react-router-dom';
 import ContinerInfoBar from '../components/ContinerInfoBar';
 import DotsLoader from '../components/DotsLoader';
 import useLogSourceEvent from '../lib/hooks/useLogSourceEvent';
-import { Row, Col, Tag, Tooltip, Typography, Space, message } from 'antd'
+import { Row, Col, Tag, Tooltip, Typography, Space, message, Affix } from 'antd'
 import { useEffect, useState, CSSProperties, createRef, forwardRef } from 'react'
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -91,7 +91,10 @@ function LogViewer() {
 
   return (
     <>
-      {!loading && <ContinerInfoBar continerId={params.id} ></ContinerInfoBar>}
+      {!loading && 
+       <Affix offsetTop={40}>
+        <ContinerInfoBar continerId={params.id} ></ContinerInfoBar>
+      </Affix>}
       <AutoSizer>
         {({ height, width }) => (
           <List
