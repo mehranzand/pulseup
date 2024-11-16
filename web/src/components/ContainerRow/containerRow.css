@@ -3,8 +3,10 @@
     margin: 5px 0px;
 }
 .continer-name{
-    color: #fff;
-    white-space: 'nowrap';
     font-size: 18px;
     align-items: baseline;
+    width: 190px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
