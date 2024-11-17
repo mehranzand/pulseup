@@ -1,7 +1,7 @@
-
-import { Row, Col, Typography, Space, Tag } from 'antd'
+import { Row, Col, Typography, Space, Tag, Button } from 'antd'
 import { useAppSelector } from "../../hooks"
 import { Container } from '../../types/Container';
+import { MenuOutlined } from '@ant-design/icons';
 import './continerInfoBar.css'
 
 interface ContinerInfoBarProps {
@@ -27,18 +27,24 @@ function ContinerInfoBar(props: ContinerInfoBarProps) {
   }
 
   return (
-    <Row className='container-bar' align='middle'>
-      <Col>
-        {container && <Space align='baseline'>
-          <span className='container-name' >
-            {container?.name}
-          </span>
-          <Text className='container-tag' keyboard>{container?.image}</Text>
-          <Text className='container-tag' keyboard>{container?.status}</Text>
-          <Tag className='state' color={tagColor(container)}>{container?.state}</Tag>
-        </Space>}
-      </Col>
-    </Row>
+    <>
+      <Row className='container-bar' align='middle'>
+        <Col flex="auto">
+          {container && <Space align='baseline'>
+            <span className='container-name' >
+              {container?.name}
+            </span>
+            <Text className='container-tag' keyboard>{container?.image}</Text>
+            <Text className='container-tag' keyboard>{container?.status}</Text>
+            <Tag className='state' color={tagColor(container)}>{container?.state}</Tag>
+
+          </Space>}
+        </Col>
+        <Col>
+          <Button type="text" size="small" style={{color: "white",  marginRight: "10px" }} icon={<MenuOutlined />}></Button>
+        </Col>
+      </Row>
+    </>
   )
 }
 
