@@ -2,7 +2,7 @@ import { useParams, useLocation} from 'react-router-dom';
 import ContinerInfoBar from '../components/ContinerInfoBar';
 import DotsLoader from '../components/DotsLoader';
 import useLogSourceEvent from '../lib/hooks/useLogSourceEvent';
-import { Row, Col, Tag, Tooltip, Typography, Space, Affix } from 'antd'
+import { Row, Col, Tooltip, Typography, Space, Affix } from 'antd'
 import { useEffect, useState, CSSProperties, createRef, forwardRef } from 'react'
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -52,11 +52,11 @@ function LogViewer() {
         bottom: `${parseFloat(Number(style.bottom).toString()) + PADDING_SIZE}px`
       }}>
       <Col span={24}>
-        <Space>
+        <Space align='baseline'>
           <Tooltip title={record.type} placement='top'>
             <span className={`type-dot ${record.type}`}></span>
           </Tooltip>
-          <Tag color='blue-inverse'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</Tag>
+          <div className='log-date'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</div>
           <Text className='log-message' copyable={{ text: record.message }}>
             <Ansi>{record.message}</Ansi>
           </Text>
