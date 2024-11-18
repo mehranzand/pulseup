@@ -22,7 +22,7 @@ function LogViewer() {
   const [paused, setPaused] = useState<boolean>(false)
 
   function scrollToEnd() {
-   listRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
+    listRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
   }
 
   useEffect(() => {
@@ -100,7 +100,7 @@ function LogViewer() {
         )}
       </AutoSizer>
       {loading && <DotsLoader style={{ margin: '45vh' }} />}
-      {!loading && messages.length > 0 && <button className={'scroll-down' + (paused ? ' bounce' : '')} onClick={scrollToEnd}></button>}
+      {!loading && messages.length > 0 && <button className={'scroll-down' + (paused ? ' bounce' : ' hide')} onClick={scrollToEnd}></button>}
     </>
   )
 }
