@@ -127,9 +127,10 @@
 }
 
 .log-date{
-  width: 170px;
+  max-width: 170px;
   height:22px;
   font-family:monospace;
   color:#099cec;
   text-align: left;
+	white-space: nowrap;
 }
