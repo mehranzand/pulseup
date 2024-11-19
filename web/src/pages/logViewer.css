@@ -134,3 +134,28 @@
   text-align: left;
 	white-space: nowrap;
 }
+
+.streaming {
+  width: 100%;
+  height: 3px; 
+  overflow: hidden;
+  position: relative; 
+  background-color: #192025;
+}
+
+.animated-gradient {
+  width: 75%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, #099cec, #192025, transparent);
+  position: absolute;
+  animation: oscillate 2s linear infinite alternate; 
+}
+
+@keyframes oscillate {
+  0% {
+    left: 0%; 
+  }
+  100% {
+    left: 50%; 
+  }
+}
