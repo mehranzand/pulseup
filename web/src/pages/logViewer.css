@@ -140,9 +140,11 @@
   height: 3px; 
   overflow: hidden;
   position: relative; 
-  background-color: #192025;
 }
 
+.streaming.hide { 
+	display: none;
+}
 .animated-gradient {
   width: 75%;
   height: 100%;

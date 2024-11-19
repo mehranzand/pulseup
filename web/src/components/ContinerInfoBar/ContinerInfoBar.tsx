@@ -1,4 +1,4 @@
-import { Row, Col, Typography, Space, Tag, Button } from 'antd'
+import { Row, Col, Typography, Space, Button } from 'antd'
 import { useAppSelector } from "../../hooks"
 import { Container } from '../../types/Container';
 import { MenuOutlined } from '@ant-design/icons';
@@ -13,16 +13,16 @@ const { Text } = Typography;
 function ContinerInfoBar(props: ContinerInfoBarProps) {
   const container = useAppSelector((state) => state.containers.data.find(a => a.id == props.continerId))
 
-  const tagColor = (c: Container | undefined) => {
+  const getType = (c: Container | undefined) => {
     if (c == undefined) return
 
     if (c.state == 'running') {
-      return "#55acee"
+      return "success"
     } else if (c.state == 'exited') {
-      return "#f50"
+      return "danger"
     }
     else {
-      return "#108ee9"
+      return "secondary"
     }
   }
 
@@ -36,8 +36,7 @@ function ContinerInfoBar(props: ContinerInfoBarProps) {
             </span>
             <Text className='container-tag' keyboard>{container?.image}</Text>
             <Text className='container-tag' keyboard>{container?.status}</Text>
-            <Tag className='state' color={tagColor(container)}>{container?.state}</Tag>
-
+            <Text  type={getType(container)} >{container?.state}</Text>
           </Space>}
         </Col>
         <Col>

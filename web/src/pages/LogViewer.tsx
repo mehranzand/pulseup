@@ -83,9 +83,9 @@ function LogViewer() {
       {!loading && 
        <Affix offsetTop={43}>
         <ContinerInfoBar continerId={params.id} ></ContinerInfoBar>
-        {!paused && <div className="streaming">
+        <div className={'streaming ' + (paused ? 'hide' : '')}>
           <div className="animated-gradient"></div>
-        </div>}
+        </div>
       </Affix>}
       <AutoSizer>
         {({ height, width }) => (
