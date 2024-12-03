@@ -103,6 +103,7 @@
   color: #e5e7eb;
   white-space: nowrap;
   word-break: break-word;
+  width: 70%;
 }
 
 .log-row{
@@ -127,7 +128,7 @@
 }
 
 .log-date{
-  max-width: 170px;
+
   height:22px;
   font-family:monospace;
   color:#099cec;

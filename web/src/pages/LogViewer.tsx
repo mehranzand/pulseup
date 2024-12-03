@@ -4,7 +4,7 @@ import DotsLoader from '../components/DotsLoader';
 import useLogSourceEvent from '../lib/hooks/useLogSourceEvent';
 import { Row, Col, Tooltip, Typography, Space, Affix } from 'antd'
 import { useEffect, useState, CSSProperties, createRef, forwardRef } from 'react'
-import { FixedSizeList as List } from 'react-window';
+import { VariableSizeList } from 'react-window';
 import AutoSizer from "react-virtualized-auto-sizer";
 import Ansi from 'ansi-to-react';
 import moment from 'moment';
@@ -58,11 +58,15 @@ function LogViewer() {
           </Tooltip>
           <div className='log-date'>{moment(record.date).format('MM/DD/YYYY h:mm:ss a')}</div>
           <Text className='log-message' copyable={{ text: record.message }}>
-            <Ansi>{record.message}</Ansi>
+						<Ansi>{record.message}</Ansi>
           </Text>
         </Space>
       </Col>
     </Row>
+  };
+
+	const getRowHeight = (index: number): number => {
+    return ITEM_SIZE
   };
 
   const innerElementType = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
@@ -89,17 +93,17 @@ function LogViewer() {
       </Affix>}
       <AutoSizer>
         {({ height, width }) => (
-          <List
+          <VariableSizeList
             innerRef={listRef}
             className='log-wrapper'
             height={height - 50}
             itemCount={messages.length}
             innerElementType={innerElementType}
-            itemSize={ITEM_SIZE}
+						itemSize={getRowHeight}
             width={width}
           >
             {LogRow}
-          </List>
+          </VariableSizeList>
         )}
       </AutoSizer>
       {loading && <DotsLoader style={{ margin: '45vh' }} />}
